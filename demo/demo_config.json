@@ -1,0 +1,153 @@
+{
+  "demo_configuration": {
+    "name": "ACSO System Demonstration",
+    "version": "1.0.0",
+    "description": "Interactive demonstration of ACSO capabilities",
+    "demo_mode": "interactive"
+  },
+  "presentation_settings": {
+    "auto_advance": false,
+    "pause_duration": 2.0,
+    "animation_speed": 0.5,
+    "show_progress": true,
+    "colored_output": true
+  },
+  "scenario_configuration": {
+    "threat_detection": {
+      "enabled": true,
+      "duration_minutes": 8,
+      "complexity_level": "medium",
+      "scenarios": [
+        "malware_detection",
+        "data_exfiltration", 
+        "advanced_persistent_threat"
+      ]
+    },
+    "service_orchestration": {
+      "enabled": true,
+      "duration_minutes": 10,
+      "complexity_level": "medium",
+      "scenarios": [
+        "automated_patch_management",
+        "intelligent_service_requests",
+        "capacity_optimization"
+      ]
+    },
+    "financial_intelligence": {
+      "enabled": true,
+      "duration_minutes": 12,
+      "complexity_level": "high",
+      "scenarios": [
+        "cost_optimization_analysis",
+        "revenue_opportunity_identification",
+        "roi_business_case"
+      ]
+    },
+    "human_approval": {
+      "enabled": true,
+      "duration_minutes": 6,
+      "complexity_level": "medium",
+      "scenarios": [
+        "approval_workflow",
+        "expert_escalation",
+        "multi_stage_approval"
+      ]
+    },
+    "multi_agent_coordination": {
+      "enabled": true,
+      "duration_minutes": 15,
+      "complexity_level": "high",
+      "scenarios": [
+        "coordinated_incident_response",
+        "resource_optimization_collaboration",
+        "complex_business_scenario"
+      ]
+    }
+  },
+  "demo_data": {
+    "realistic_values": true,
+    "randomization": true,
+    "company_context": {
+      "industry": "Technology Services",
+      "size": "Mid-Market (500-2000 employees)",
+      "annual_revenue": "$50M-$200M",
+      "it_budget": "$5M-$15M"
+    }
+  },
+  "agent_simulation": {
+    "response_delays": {
+      "threat_hunter": 0.8,
+      "incident_response": 1.2,
+      "service_orchestration": 1.0,
+      "financial_intelligence": 1.5,
+      "supervisor": 0.5
+    },
+    "success_rates": {
+      "threat_detection": 0.95,
+      "incident_containment": 0.92,
+      "service_automation": 0.88,
+      "financial_analysis": 0.96
+    }
+  },
+  "business_metrics": {
+    "cost_reduction_target": 0.35,
+    "efficiency_improvement": 0.60,
+    "revenue_increase": 0.20,
+    "response_time_improvement": 0.70
+  },
+  "demo_flow": {
+    "introduction_duration": 30,
+    "scenario_transition_pause": 3,
+    "conclusion_duration": 60,
+    "q_and_a_time": 300
+  },
+  "presentation_materials": {
+    "slides_available": true,
+    "handouts_generated": true,
+    "technical_deep_dive": true,
+    "business_case_materials": true
+  },
+  "audience_profiles": {
+    "technical": {
+      "focus_areas": ["architecture", "integration", "security"],
+      "detail_level": "high",
+      "demo_scenarios": ["threat_detection", "multi_agent_coordination"]
+    },
+    "business": {
+      "focus_areas": ["roi", "efficiency", "cost_savings"],
+      "detail_level": "medium",
+      "demo_scenarios": ["financial_intelligence", "service_orchestration"]
+    },
+    "executive": {
+      "focus_areas": ["business_value", "competitive_advantage", "strategic_impact"],
+      "detail_level": "low",
+      "demo_scenarios": ["financial_intelligence", "human_approval"]
+    },
+    "security": {
+      "focus_areas": ["threat_detection", "incident_response", "compliance"],
+      "detail_level": "high", 
+      "demo_scenarios": ["threat_detection", "human_approval"]
+    }
+  },
+  "customization": {
+    "client_branding": false,
+    "industry_specific_scenarios": false,
+    "custom_data_integration": false,
+    "white_label_mode": false
+  },
+  "technical_requirements": {
+    "minimum_python_version": "3.8",
+    "required_packages": [
+      "asyncio",
+      "json",
+      "uuid",
+      "datetime",
+      "typing"
+    ],
+    "optional_packages": [
+      "colorama",
+      "rich",
+      "matplotlib"
+    ]
+  }
+}

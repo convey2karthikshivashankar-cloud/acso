@@ -1,0 +1,211 @@
+version: '3.8'
+
+services:
+  # Supervisor Agent
+  supervisor-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: supervisor-agent
+    container_name: acso-supervisor
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AGENT_TYPE=supervisor
+      - AGENT_ID=supervisor-001
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - acso-network
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Threat Hunter Agent
+  threat-hunter-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: threat-hunter-agent
+    container_name: acso-threat-hunter
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AGENT_TYPE=threat-hunter
+      - AGENT_ID=threat-hunter-001
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - acso-network
+    depends_on:
+      - redis
+      - postgres
+      - supervisor-agent
+    restart: unless-stopped
+
+  # Incident Response Agent
+  incident-response-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: incident-response-agent
+    container_name: acso-incident-response
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AGENT_TYPE=incident-response
+      - AGENT_ID=incident-response-001
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - acso-network
+    depends_on:
+      - redis
+      - postgres
+      - supervisor-agent
+    restart: unless-stopped
+
+  # Service Orchestration Agent
+  service-orchestration-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: service-orchestration-agent
+    container_name: acso-service-orchestration
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AGENT_TYPE=service-orchestration
+      - AGENT_ID=service-orchestration-001
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - acso-network
+    depends_on:
+      - redis
+      - postgres
+      - supervisor-agent
+    restart: unless-stopped
+
+  # Financial Intelligence Agent
+  financial-intelligence-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: financial-intelligence-agent
+    container_name: acso-financial-intelligence
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AGENT_TYPE=financial-intelligence
+      - AGENT_ID=financial-intelligence-001
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - acso-network
+    depends_on:
+      - redis
+      - postgres
+      - supervisor-agent
+    restart: unless-stopped
+
+  # Redis for caching and message queuing
+  redis:
+    image: redis:7-alpine
+    container_name: acso-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - acso-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # PostgreSQL for persistent data storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: acso-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-acso}
+      - POSTGRES_USER=${POSTGRES_USER:-acso}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-acso_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - acso-network
+    restart: unless-stopped
+
+  # Monitoring Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: acso-dashboard
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DASHBOARD_MODE=true
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - acso-network
+    depends_on:
+      - supervisor-agent
+      - redis
+      - postgres
+    restart: unless-stopped
+    command: ["python", "-m", "src.dashboard.main"]
+
+  # Nginx reverse proxy (for production)
+  nginx:
+    image: nginx:alpine
+    container_name: acso-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    networks:
+      - acso-network
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  acso-network:
+    driver: bridge

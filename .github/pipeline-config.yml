@@ -1,0 +1,107 @@
+# ACSO CI/CD Pipeline Configuration
+
+# Project settings
+project:
+  name: acso
+  description: "Autonomous Cyber-Security & Service Orchestrator"
+  
+# Environment configuration
+environments:
+  development:
+    branch: develop
+    cluster_suffix: dev
+    desired_count: 1
+    cpu: 512
+    memory: 1024
+    
+  staging:
+    branch: main
+    cluster_suffix: staging
+    desired_count: 1
+    cpu: 512
+    memory: 1024
+    
+  production:
+    trigger: release
+    cluster_suffix: prod
+    desired_count: 2  # High availability
+    cpu: 1024
+    memory: 2048
+
+# Agent configuration
+agents:
+  - name: supervisor
+    port: 8000
+    health_check: "/health"
+    
+  - name: threat-hunter
+    port: 8000
+    health_check: "/health"
+    
+  - name: incident-response
+    port: 8000
+    health_check: "/health"
+    
+  - name: service-orchestration
+    port: 8000
+    health_check: "/health"
+    
+  - name: financial-intelligence
+    port: 8000
+    health_check: "/health"
+
+# Test configuration
+testing:
+  smoke_tests:
+    timeout: 300  # 5 minutes
+    retry_count: 3
+    
+  integration_tests:
+    timeout: 600  # 10 minutes
+    retry_count: 2
+    
+  production_validation:
+    timeout: 900  # 15 minutes
+    retry_count: 1
+    critical_failure_threshold: 0
+
+# Build configuration
+build:
+  python_version: "3.11"
+  docker:
+    base_image: "python:3.11-slim"
+    multi_stage: true
+    cache_enabled: true
+    
+# Deployment configuration
+deployment:
+  rollback:
+    enabled: true
+    automatic: true
+    timeout: 600
+    
+  health_check:
+    initial_delay: 60
+    timeout: 300
+    interval: 30
+    
+  notifications:
+    slack_webhook: ""  # Configure if needed
+    email_recipients: []
+
+# Security configuration
+security:
+  scan_enabled: true
+  fail_on_high_severity: true
+  allowed_vulnerabilities: []
+  
+# Monitoring configuration
+monitoring:
+  cloudwatch:
+    log_retention_days: 30
+    metrics_enabled: true
+    
+  alerts:
+    deployment_failure: true
+    test_failure: true
+    security_issue: true

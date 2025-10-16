@@ -1,0 +1,263 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ACSO (Autonomous Cyber-Security & Service Orchestrator) Infrastructure'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'development'
+    AllowedValues: ['development', 'staging', 'production']
+    Description: 'Deployment environment'
+  
+  ProjectName:
+    Type: String
+    Default: 'acso'
+    Description: 'Project name for resource naming'
+  
+  BedrockModelId:
+    Type: String
+    Default: 'anthropic.claude-3-sonnet-20240229-v1:0'
+    Description: 'Bedrock model ID for AI agents'
+
+Resources:
+  # IAM Roles and Policies
+  ACSOExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-execution-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - bedrock.amazonaws.com
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: ACSOBedrockAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeAgent
+                  - bedrock:CreateAgent
+                  - bedrock:UpdateAgent
+                  - bedrock:GetAgent
+                  - bedrock:ListAgents
+                Resource: '*'
+        - PolicyName: ACSOCloudWatchAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - cloudwatch:PutMetricData
+                  - cloudwatch:GetMetricStatistics
+                Resource: '*'
+
+  # KMS Key for Encryption
+  ACSOKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'ACSO encryption key'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow ACSO services
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt ACSOExecutionRole.Arn
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+
+  ACSOKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ProjectName}-${Environment}-key'
+      TargetKeyId: !Ref ACSOKMSKey
+
+  # CloudWatch Log Groups
+  ACSOLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/${ProjectName}/${Environment}/agents'
+      RetentionInDays: 30
+
+  # S3 Bucket for Artifacts and Data
+  ACSOArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-${Environment}-artifacts-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref ACSOKMSKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  # DynamoDB Table for Agent State
+  ACSOAgentStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-agent-state'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: agent_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: agent_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref ACSOKMSKey
+
+  # EventBridge for Agent Communication
+  ACSOEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-events'
+
+  # SQS Queues for Task Management
+  ACSOTaskQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ProjectName}-${Environment}-tasks'
+      VisibilityTimeoutSeconds: 300
+      MessageRetentionPeriod: 1209600  # 14 days
+      KmsMasterKeyId: !Ref ACSOKMSKey
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ACSOTaskDLQ.Arn
+        maxReceiveCount: 3
+
+  ACSOTaskDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ProjectName}-${Environment}-tasks-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+      KmsMasterKeyId: !Ref ACSOKMSKey
+
+  # API Gateway for External Integration
+  ACSOApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-api'
+      Description: 'ACSO API Gateway'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # VPC for Secure Networking (Optional)
+  ACSOVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-vpc'
+
+  ACSOPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ACSOVPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-private-subnet-1'
+
+  ACSOPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ACSOVPC
+      CidrBlock: '10.0.2.0/24'
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-private-subnet-2'
+
+Outputs:
+  ExecutionRoleArn:
+    Description: 'ARN of the ACSO execution role'
+    Value: !GetAtt ACSOExecutionRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-execution-role-arn'
+
+  KMSKeyId:
+    Description: 'KMS Key ID for ACSO encryption'
+    Value: !Ref ACSOKMSKey
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-kms-key-id'
+
+  LogGroupName:
+    Description: 'CloudWatch Log Group for ACSO'
+    Value: !Ref ACSOLogGroup
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-log-group'
+
+  ArtifactsBucket:
+    Description: 'S3 Bucket for ACSO artifacts'
+    Value: !Ref ACSOArtifactsBucket
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-artifacts-bucket'
+
+  AgentStateTable:
+    Description: 'DynamoDB table for agent state'
+    Value: !Ref ACSOAgentStateTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-agent-state-table'
+
+  TaskQueueUrl:
+    Description: 'SQS Queue URL for tasks'
+    Value: !Ref ACSOTaskQueue
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-task-queue-url'
+
+  VPCId:
+    Description: 'VPC ID for ACSO'
+    Value: !Ref ACSOVPC
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-vpc-id'
+
+  PrivateSubnetIds:
+    Description: 'Private subnet IDs'
+    Value: !Join [',', [!Ref ACSOPrivateSubnet1, !Ref ACSOPrivateSubnet2]]
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-private-subnet-ids'

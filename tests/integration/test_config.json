@@ -1,0 +1,133 @@
+{
+  "test_environment": {
+    "name": "integration_test",
+    "aws_region": "us-east-1",
+    "log_level": "INFO",
+    "timeout_multiplier": 1.0
+  },
+  "agent_configuration": {
+    "supervisor": {
+      "agent_id": "supervisor-test-001",
+      "max_concurrent_workflows": 10,
+      "decision_timeout": 30
+    },
+    "threat_hunter": {
+      "agent_id": "threat-hunter-test-001",
+      "analysis_timeout": 60,
+      "confidence_threshold": 0.7
+    },
+    "incident_response": {
+      "agent_id": "incident-response-test-001",
+      "containment_timeout": 120,
+      "auto_approve_threshold": 0.9
+    },
+    "service_orchestration": {
+      "agent_id": "service-orchestration-test-001",
+      "execution_timeout": 300,
+      "batch_size": 5
+    },
+    "financial_intelligence": {
+      "agent_id": "financial-intelligence-test-001",
+      "analysis_timeout": 180,
+      "cost_threshold": 1000.0
+    }
+  },
+  "message_bus": {
+    "queue_size": 1000,
+    "message_timeout": 30,
+    "retry_attempts": 3,
+    "persistence_enabled": true
+  },
+  "workflow_coordinator": {
+    "max_concurrent_workflows": 50,
+    "workflow_timeout": 3600,
+    "step_timeout": 300,
+    "retry_failed_steps": true
+  },
+  "human_interface": {
+    "approval_timeout": 300,
+    "escalation_timeout": 900,
+    "max_pending_approvals": 100,
+    "notification_enabled": false
+  },
+  "test_scenarios": {
+    "threat_detection": {
+      "enabled": true,
+      "scenario_count": 5,
+      "complexity_levels": ["simple", "medium", "complex"],
+      "threat_types": [
+        "malware_communication",
+        "data_exfiltration", 
+        "ddos_attack",
+        "insider_threat",
+        "advanced_persistent_threat"
+      ]
+    },
+    "service_orchestration": {
+      "enabled": true,
+      "scenario_count": 3,
+      "service_types": [
+        "patch_management",
+        "system_maintenance",
+        "configuration_change",
+        "capacity_scaling"
+      ]
+    },
+    "financial_analysis": {
+      "enabled": true,
+      "scenario_count": 2,
+      "analysis_types": [
+        "cost_optimization",
+        "revenue_analysis",
+        "budget_forecasting"
+      ]
+    },
+    "human_approval": {
+      "enabled": true,
+      "scenario_count": 4,
+      "approval_types": [
+        "incident_response",
+        "service_request",
+        "data_access",
+        "policy_exception"
+      ]
+    }
+  },
+  "performance_thresholds": {
+    "message_latency_ms": 100,
+    "workflow_completion_time_s": 300,
+    "agent_response_time_s": 30,
+    "approval_processing_time_s": 5
+  },
+  "mock_services": {
+    "aws_bedrock": {
+      "enabled": true,
+      "mock_responses": true,
+      "latency_simulation": true,
+      "failure_rate": 0.01
+    },
+    "external_apis": {
+      "enabled": true,
+      "mock_responses": true,
+      "rate_limiting": false
+    },
+    "database": {
+      "enabled": true,
+      "in_memory": true,
+      "persistence": false
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "structured",
+    "output": "console",
+    "capture_agent_logs": true,
+    "capture_workflow_traces": true
+  },
+  "reporting": {
+    "generate_detailed_report": true,
+    "include_performance_metrics": true,
+    "include_error_analysis": true,
+    "export_format": "json"
+  }
+}

@@ -1,0 +1,251 @@
+{
+  "test_environment": {
+    "name": "performance_test",
+    "aws_region": "us-east-1",
+    "log_level": "WARNING",
+    "timeout_multiplier": 1.0,
+    "performance_mode": true
+  },
+  "load_test_configuration": {
+    "default_test_duration": 120,
+    "default_ramp_up_time": 30,
+    "max_concurrent_users": 1000,
+    "operations_per_second_limit": 500.0,
+    "batch_processing": true,
+    "compression_enabled": true
+  },
+  "scalability_test_configuration": {
+    "min_users": 5,
+    "max_users": 2000,
+    "user_increment": 50,
+    "test_duration_per_level": 90,
+    "saturation_detection": true,
+    "linear_scalability_threshold": 70.0
+  },
+  "stress_test_configuration": {
+    "starting_users": 50,
+    "max_stress_users": 2000,
+    "stress_increment": 50,
+    "stress_test_duration": 120,
+    "failure_threshold": {
+      "success_rate": 80.0,
+      "response_time": 10.0,
+      "cpu_utilization": 95.0,
+      "memory_utilization": 95.0
+    }
+  },
+  "performance_thresholds": {
+    "throughput": {
+      "minimum_ops_per_second": 10.0,
+      "target_ops_per_second": 50.0,
+      "excellent_ops_per_second": 100.0
+    },
+    "response_time": {
+      "excellent_ms": 1000,
+      "good_ms": 3000,
+      "acceptable_ms": 5000,
+      "poor_ms": 10000
+    },
+    "success_rate": {
+      "minimum_percent": 90.0,
+      "target_percent": 95.0,
+      "excellent_percent": 99.0
+    },
+    "resource_utilization": {
+      "cpu_warning_percent": 70.0,
+      "cpu_critical_percent": 85.0,
+      "memory_warning_percent": 70.0,
+      "memory_critical_percent": 85.0
+    }
+  },
+  "test_scenarios": {
+    "threat_detection": {
+      "enabled": true,
+      "weight": 0.4,
+      "complexity_levels": {
+        "simple": {
+          "indicators_count": 3,
+          "log_entries": 10,
+          "confidence_range": [0.8, 0.95]
+        },
+        "medium": {
+          "indicators_count": 5,
+          "log_entries": 25,
+          "confidence_range": [0.6, 0.9]
+        },
+        "complex": {
+          "indicators_count": 8,
+          "log_entries": 50,
+          "confidence_range": [0.4, 0.8]
+        }
+      }
+    },
+    "service_orchestration": {
+      "enabled": true,
+      "weight": 0.35,
+      "complexity_levels": {
+        "simple": {
+          "affected_systems": 2,
+          "automation_rate": 0.9
+        },
+        "medium": {
+          "affected_systems": 5,
+          "automation_rate": 0.7
+        },
+        "complex": {
+          "affected_systems": 10,
+          "automation_rate": 0.5
+        }
+      }
+    },
+    "financial_analysis": {
+      "enabled": true,
+      "weight": 0.25,
+      "complexity_levels": {
+        "simple": {
+          "data_points": 100,
+          "analysis_depth": "basic"
+        },
+        "medium": {
+          "data_points": 500,
+          "analysis_depth": "detailed"
+        },
+        "complex": {
+          "data_points": 1000,
+          "analysis_depth": "comprehensive"
+        }
+      }
+    }
+  },
+  "system_monitoring": {
+    "enabled": true,
+    "monitoring_interval_seconds": 1,
+    "metrics_retention_count": 1000,
+    "resource_monitoring": {
+      "cpu": true,
+      "memory": true,
+      "network": true,
+      "disk": true
+    }
+  },
+  "agent_configuration": {
+    "supervisor": {
+      "max_concurrent_workflows": 1000,
+      "decision_timeout": 10,
+      "performance_optimizations": true
+    },
+    "threat_hunter": {
+      "analysis_timeout": 30,
+      "batch_processing": true,
+      "cache_enabled": true
+    },
+    "incident_response": {
+      "containment_timeout": 60,
+      "parallel_actions": true,
+      "action_batching": true
+    },
+    "service_orchestration": {
+      "execution_timeout": 120,
+      "batch_size": 10,
+      "parallel_execution": true
+    },
+    "financial_intelligence": {
+      "analysis_timeout": 90,
+      "data_caching": true,
+      "parallel_analysis": true
+    }
+  },
+  "message_bus_configuration": {
+    "queue_size": 10000,
+    "batch_processing": true,
+    "batch_size": 100,
+    "compression_enabled": true,
+    "persistence_enabled": false,
+    "retry_configuration": {
+      "max_retries": 3,
+      "retry_delay": 0.1,
+      "exponential_backoff": true
+    }
+  },
+  "workflow_coordinator_configuration": {
+    "max_concurrent_workflows": 1000,
+    "workflow_timeout": 1800,
+    "step_timeout": 300,
+    "parallel_execution": true,
+    "workflow_batching": true
+  },
+  "data_generation": {
+    "threat_scenarios": {
+      "threat_types": [
+        "malware_communication",
+        "data_exfiltration", 
+        "ddos_attack",
+        "insider_threat",
+        "advanced_persistent_threat",
+        "brute_force_attack",
+        "privilege_escalation",
+        "lateral_movement"
+      ],
+      "severity_distribution": {
+        "low": 0.3,
+        "medium": 0.4,
+        "high": 0.2,
+        "critical": 0.1
+      }
+    },
+    "service_requests": {
+      "request_types": [
+        "patch_management",
+        "system_maintenance",
+        "configuration_change",
+        "capacity_scaling",
+        "backup_operation",
+        "security_update",
+        "performance_optimization",
+        "disaster_recovery"
+      ],
+      "priority_distribution": {
+        "low": 0.4,
+        "medium": 0.3,
+        "high": 0.2,
+        "urgent": 0.1
+      }
+    },
+    "financial_analysis": {
+      "analysis_types": [
+        "cost_optimization",
+        "revenue_analysis",
+        "budget_forecasting",
+        "roi_calculation",
+        "resource_utilization",
+        "profit_margin_analysis",
+        "expense_tracking",
+        "financial_planning"
+      ],
+      "time_periods": [
+        "last_7_days",
+        "last_30_days",
+        "last_90_days",
+        "last_year",
+        "custom_range"
+      ]
+    }
+  },
+  "reporting": {
+    "generate_detailed_report": true,
+    "include_performance_metrics": true,
+    "include_resource_utilization": true,
+    "include_scalability_analysis": true,
+    "include_recommendations": true,
+    "export_format": "json",
+    "charts_enabled": false
+  },
+  "validation_rules": {
+    "minimum_test_duration": 30,
+    "maximum_test_duration": 3600,
+    "minimum_concurrent_users": 1,
+    "maximum_concurrent_users": 5000,
+    "minimum_operations_per_second": 0.1,
+    "maximum_operations_per_second": 1000.0
+  }
+}
