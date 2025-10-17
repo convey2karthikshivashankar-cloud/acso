@@ -1,0 +1,47 @@
+{
+  "id": "user-1",
+  "username": "admin",
+  "email": "admin@acso.com",
+  "firstName": "System",
+  "lastName": "Administrator",
+  "roles": [
+    {
+      "id": "role-admin",
+      "name": "System Administrator",
+      "description": "Full system access",
+      "permissions": [
+        {
+          "resource": "*",
+          "actions": ["read", "write", "execute", "admin"]
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "resource": "*",
+      "actions": ["read", "write", "execute", "admin"]
+    }
+  ],
+  "preferences": {
+    "theme": "light",
+    "language": "en",
+    "timezone": "UTC",
+    "dateFormat": "YYYY-MM-DD",
+    "notifications": {
+      "email": true,
+      "push": true,
+      "inApp": true,
+      "channels": ["email", "slack"],
+      "frequency": "immediate"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "refreshInterval": 30000,
+      "widgetSettings": {}
+    }
+  },
+  "lastLogin": "2024-01-15T10:30:00Z",
+  "isActive": true,
+  "avatar": null
+}

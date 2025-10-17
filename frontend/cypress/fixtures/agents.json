@@ -1,0 +1,52 @@
+[
+  {
+    "id": "supervisor",
+    "name": "Supervisor Agent",
+    "type": "supervisor",
+    "status": "active",
+    "health": "healthy",
+    "configuration": {
+      "max_concurrent_workflows": 100,
+      "decision_timeout_seconds": 30,
+      "escalation_threshold": 0.7
+    },
+    "metrics": {
+      "cpuUsage": 45.2,
+      "memoryUsage": 67.8,
+      "networkIO": 1024,
+      "diskIO": 512,
+      "requestsPerSecond": 25.5,
+      "averageResponseTime": 150,
+      "errorRate": 0.1,
+      "uptime": 99.9
+    },
+    "lastHeartbeat": "2024-01-15T10:30:00Z",
+    "version": "1.0.0",
+    "capabilities": ["workflow_orchestration", "decision_making", "coordination"]
+  },
+  {
+    "id": "threat_hunter",
+    "name": "Threat Hunter Agent",
+    "type": "threat_hunter",
+    "status": "active",
+    "health": "healthy",
+    "configuration": {
+      "analysis_timeout": 60,
+      "confidence_threshold": 0.75,
+      "max_concurrent_analyses": 10
+    },
+    "metrics": {
+      "cpuUsage": 32.1,
+      "memoryUsage": 54.3,
+      "networkIO": 2048,
+      "diskIO": 1024,
+      "requestsPerSecond": 15.2,
+      "averageResponseTime": 200,
+      "errorRate": 0.05,
+      "uptime": 99.8
+    },
+    "lastHeartbeat": "2024-01-15T10:29:45Z",
+    "version": "1.0.0",
+    "capabilities": ["threat_analysis", "vulnerability_assessment", "risk_scoring"]
+  }
+]
