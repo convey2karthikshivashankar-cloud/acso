@@ -247,14 +247,15 @@ aws s3 cp config/ s3://acso-development-artifacts-123456789/backups/config/ --re
 
 ## Cost Optimization
 
-### Development Environment
+### Development Environment (FREE TIER OPTIMIZED)
 
-Estimated monthly cost: $150-300
-- ECS Fargate: $50-100
-- RDS t3.micro: $15-25
-- ElastiCache t3.micro: $15-25
-- Data transfer: $10-20
-- CloudWatch: $5-10
+Estimated monthly cost: $0-50 (within free tier limits)
+- ECS Fargate: $0 (within free tier - 20GB-hours per month)
+- RDS t3.micro: $0 (within free tier - 750 hours per month)
+- ElastiCache t3.micro: $0 (within free tier - 750 hours per month)
+- Data transfer: $0-5 (1GB free per month)
+- CloudWatch: $0-5 (basic monitoring free)
+- Bedrock usage: $0-100 (your allocated budget)
 
 ### Production Environment
 
