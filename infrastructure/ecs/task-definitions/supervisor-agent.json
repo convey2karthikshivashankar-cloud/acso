@@ -1,0 +1,60 @@
+{
+  "family": "acso-supervisor-agent",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/acso-${ENVIRONMENT}-execution-role",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/acso-${ENVIRONMENT}-execution-role",
+  "containerDefinitions": [
+    {
+      "name": "acso-supervisor-agent",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/acso-supervisor-agent:${IMAGE_TAG}",
+      "essential": true,
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "${ENVIRONMENT}"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "${AWS_REGION}"
+        },
+        {
+          "name": "AGENT_TYPE",
+          "value": "supervisor"
+        },
+        {
+          "name": "AGENT_ID",
+          "value": "supervisor-001"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://acso:${DB_PASSWORD}@${DB_HOST}:5432/acso"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://${REDIS_HOST}:6379"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "BEDROCK_MODEL_ID",
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:acso/${ENVIRONMENT}/bedrock-model-id"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:acso/${ENVIRONMENT}/db-password"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/aws/acso/${ENVIRONMENT}/agents",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "supervisor-agent"
+        }
+      }
+    }
+  ]
+}

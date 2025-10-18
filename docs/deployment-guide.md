@@ -1,454 +1,337 @@
-# ACSO Deployment Guide for Amazon Bedrock AgentCore
+# ACSO AWS Deployment Guide
 
-## Overview
+## Phase 4: Production Deployment to AWS
 
-This guide provides comprehensive instructions for deploying the Autonomous Cyber-Security & Service Orchestrator (ACSO) system using Amazon Bedrock AgentCore runtime. ACSO is a multi-agent system designed for proactive IT management and security operations.
+This guide provides step-by-step instructions for deploying the ACSO (Autonomous Cyber-Security & Service Orchestrator) system to AWS.
 
 ## Prerequisites
 
-### AWS Account Requirements
-
+### 1. AWS Account Setup
 - AWS Account with appropriate permissions
-- Amazon Bedrock access enabled in your region
-- Amazon Bedrock AgentCore access (preview/GA)
-- ECS, ECR, CloudWatch, IAM, and VPC permissions
+- AWS CLI installed and configured
+- Docker installed and running
+- Git repository access
 
-### Local Development Environment
+### 2. Required AWS Permissions
+Your AWS user/role needs the following permissions:
+- ECS Full Access
+- ECR Full Access
+- CloudFormation Full Access
+- IAM permissions for role creation
+- Secrets Manager Full Access
+- RDS permissions
+- ElastiCache permissions
+- CloudWatch Logs permissions
+- Bedrock permissions
 
-- Python 3.11 or higher
-- AWS CLI v2 configured
-- Docker Desktop (for local testing)
-- Git for version control
+### 3. Local Environment
+- PowerShell 5.1+ (Windows) or Bash (Linux/Mac)
+- Docker Desktop
+- Git
+- AWS CLI v2
 
-### Required AWS Services
+## Deployment Steps
 
-- **Amazon Bedrock AgentCore**: Core runtime for agent execution
-- **Amazon ECS**: Container orchestration
-- **Amazon ECR**: Container registry
-- **Amazon CloudWatch**: Logging and monitoring
-- **AWS IAM**: Identity and access management
-- **Amazon VPC**: Network isolation
-- **AWS Systems Manager**: Remote management capabilities
+### Step 1: Verify Prerequisites
 
-## Architecture Overview
+```powershell
+# Check AWS CLI
+aws --version
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Amazon Bedrock AgentCore                 │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │ Supervisor  │  │   Threat    │  │  Incident   │        │
-│  │   Agent     │  │   Hunter    │  │  Response   │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-│                                                             │
-│  ┌─────────────┐  ┌─────────────┐                         │
-│  │  Service    │  │ Financial   │                         │
-│  │Orchestration│  │Intelligence │                         │
-│  └─────────────┘  └─────────────┘                         │
-├─────────────────────────────────────────────────────────────┤
-│                    Amazon ECS Fargate                      │
-├─────────────────────────────────────────────────────────────┤
-│              AWS Infrastructure (VPC, IAM, etc.)           │
-└─────────────────────────────────────────────────────────────┘
-```
+# Check Docker
+docker --version
 
-## Pre-Deployment Setup
-
-### 1. Enable Amazon Bedrock Services
-
-```bash
-# Check Bedrock availability in your region
-aws bedrock list-foundation-models --region us-east-1
-
-# Enable Bedrock AgentCore (if not already enabled)
-# This may require AWS Support ticket for preview access
-```
-
-### 2. Configure AWS CLI
-
-```bash
-# Configure AWS credentials
-aws configure
-
-# Verify access
+# Verify AWS credentials
 aws sts get-caller-identity
+
+# Check if you can access Bedrock
+aws bedrock list-foundation-models --region us-east-1
 ```
 
-### 3. Set Environment Variables
+### Step 2: Clone and Prepare Repository
 
-```bash
-export AWS_REGION=us-east-1
-export ENVIRONMENT=development  # or staging, production
-export PROJECT_NAME=acso
+```powershell
+# Navigate to your ACSO directory
+cd C:\code\acso\acso
+
+# Ensure you're on the latest version
+git pull origin main
+
+# Verify you have the v3.0.0-phase3a tag
+git tag --list | Select-String "v3.0.0"
 ```
 
-## Infrastructure Deployment
+### Step 3: Set Up AWS Secrets
 
-### Option 1: AWS CDK (Recommended)
-
-```bash
-# Install CDK if not already installed
-npm install -g aws-cdk
-
-# Navigate to CDK directory
-cd infrastructure/cdk
-
-# Install dependencies
-npm install
-
-# Bootstrap CDK (first time only)
-cdk bootstrap
-
-# Deploy infrastructure
-cdk deploy AcsoStack --parameters Environment=development
+```powershell
+# Run the secrets setup script
+.\scripts\setup-secrets.ps1 -Environment development -AwsRegion us-east-1
 ```
 
-### Option 2: CloudFormation
+This script will create the following secrets in AWS Secrets Manager:
+- Database password
+- JWT secret key
+- Redis password
+- Bedrock model configuration
 
-```bash
-# Deploy using CloudFormation template
-aws cloudformation create-stack \
-  --stack-name acso-development-infrastructure \
-  --template-body file://infrastructure/cloudformation/acso-infrastructure.yaml \
-  --parameters ParameterKey=Environment,ParameterValue=development \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+### Step 4: Deploy Infrastructure
+
+```powershell
+# Deploy only the infrastructure first
+.\scripts\deploy-to-aws.ps1 -Action infrastructure-only -Environment development -AwsRegion us-east-1
 ```
 
-### Option 3: Terraform
+This will create:
+- VPC and networking components
+- ECS cluster
+- RDS database
+- ElastiCache Redis cluster
+- IAM roles and policies
+- CloudWatch log groups
+- S3 buckets for artifacts
 
-```bash
-# Navigate to Terraform directory
-cd infrastructure/terraform
+### Step 5: Build and Push Container Images
 
-# Initialize Terraform
-terraform init
-
-# Plan deployment
-terraform plan -var="environment=development"
-
-# Apply infrastructure
-terraform apply -var="environment=development"
+```powershell
+# Build and push all container images to ECR
+.\scripts\deploy-to-aws.ps1 -Action build-only -Environment development -AwsRegion us-east-1
 ```
 
-## Application Deployment
+This will:
+- Create ECR repositories
+- Build Docker images for all services
+- Push images to ECR with proper tags
 
-### 1. Build and Push Container Images
+### Step 6: Deploy Services
 
-```bash
-# Build all agent images
-./scripts/build-images.sh
-
-# Or build individual agents
-docker build -t acso-supervisor --target supervisor-agent .
-docker build -t acso-threat-hunter --target threat-hunter-agent .
-# ... etc for other agents
+```powershell
+# Deploy the complete system
+.\scripts\deploy-to-aws.ps1 -Action deploy -Environment development -AwsRegion us-east-1
 ```
 
-### 2. Deploy to ECS
+This will:
+- Deploy all ECS services
+- Configure load balancers
+- Set up service discovery
+- Configure auto-scaling
 
-```bash
-# Deploy using deployment script
-ENVIRONMENT=development ./scripts/deploy-to-ecs.sh
+### Step 7: Verify Deployment
 
-# Check deployment status
-./scripts/deploy-to-ecs.sh status
+```powershell
+# Run comprehensive health checks
+.\scripts\health-check.ps1 -Environment development -AwsRegion us-east-1
 ```
 
-### 3. Verify Deployment
+## Post-Deployment Configuration
 
-```bash
-# Run smoke tests
-python scripts/smoke-tests.py --environment development
+### 1. Access the System
 
-# Check service health
-aws ecs describe-services \
-  --cluster acso-development-cluster \
-  --services acso-development-supervisor
-```
+After successful deployment, you can access ACSO through:
 
-## Environment-Specific Deployments
+- **Web Interface**: `https://your-alb-dns-name`
+- **API Endpoints**: `https://your-alb-dns-name/api`
+- **WebSocket**: `wss://your-alb-dns-name/ws`
 
-### Development Environment
+### 2. Initial Setup
 
-```bash
-# Quick development deployment
-git checkout develop
-git push origin develop
+1. **Create Admin User**: Use the API to create the first admin user
+2. **Configure Agents**: Set up agent configurations through the web interface
+3. **Test Workflows**: Create and test basic workflows
+4. **Monitor Logs**: Check CloudWatch logs for any issues
 
-# Manual deployment
-ENVIRONMENT=development ./scripts/deploy-to-ecs.sh
-```
+### 3. Security Configuration
 
-### Staging Environment
+1. **Update Security Groups**: Restrict access to necessary ports only
+2. **Configure WAF**: Set up AWS WAF rules for additional protection
+3. **Enable GuardDuty**: Enable AWS GuardDuty for threat detection
+4. **Set up CloudTrail**: Enable CloudTrail for audit logging
 
-```bash
-# Deploy to staging
-git checkout main
-git push origin main
+## Monitoring and Maintenance
 
-# Verify staging deployment
-python scripts/integration-tests.py --environment staging
-```
+### CloudWatch Dashboards
 
-### Production Environment
+The deployment creates CloudWatch dashboards for:
+- ECS service metrics
+- Application performance metrics
+- Database performance
+- Redis performance
+- Custom business metrics
 
-```bash
-# Create release for production deployment
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
+### Alerts and Notifications
 
-# Create GitHub release (triggers production deployment)
-# Or manual deployment:
-ENVIRONMENT=production VERSION=v1.0.0 ./scripts/deploy-to-ecs.sh
+Set up CloudWatch alarms for:
+- High CPU/memory usage
+- Service failures
+- Database connection issues
+- API error rates
 
-# Validate production deployment
-python scripts/production-validation.py --environment production
-```
+### Log Management
 
-## Configuration Management
-
-### Environment Variables
-
-Each agent requires the following environment variables:
-
-```bash
-# Core configuration
-ENVIRONMENT=production
-AWS_REGION=us-east-1
-AGENT_TYPE=supervisor
-AGENT_ID=supervisor-001
-
-# Bedrock configuration
-BEDROCK_AGENT_CORE_ENDPOINT=https://bedrock-agent-core.us-east-1.amazonaws.com
-BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
-
-# Logging configuration
-LOG_LEVEL=INFO
-CLOUDWATCH_LOG_GROUP=/aws/acso/production/agents
-```
-
-### Secrets Management
-
-Sensitive configuration is managed through AWS Systems Manager Parameter Store:
-
-```bash
-# Store database credentials
-aws ssm put-parameter \
-  --name "/acso/production/database/password" \
-  --value "your-secure-password" \
-  --type "SecureString"
-
-# Store API keys
-aws ssm put-parameter \
-  --name "/acso/production/external-api/key" \
-  --value "your-api-key" \
-  --type "SecureString"
-```
-
-## Monitoring Setup
-
-### CloudWatch Configuration
-
-```bash
-# Create log groups
-aws logs create-log-group \
-  --log-group-name "/aws/acso/production/agents"
-
-# Set retention policy
-aws logs put-retention-policy \
-  --log-group-name "/aws/acso/production/agents" \
-  --retention-in-days 30
-```
-
-### Metrics and Alarms
-
-```bash
-# Create CPU utilization alarm
-aws cloudwatch put-metric-alarm \
-  --alarm-name "ACSO-HighCPU" \
-  --alarm-description "High CPU utilization" \
-  --metric-name CPUUtilization \
-  --namespace AWS/ECS \
-  --statistic Average \
-  --period 300 \
-  --threshold 80 \
-  --comparison-operator GreaterThanThreshold \
-  --evaluation-periods 2
-```
-
-## Security Configuration
-
-### IAM Roles and Policies
-
-The deployment creates several IAM roles:
-
-- `acso-{environment}-execution-role`: ECS task execution
-- `acso-{environment}-task-role`: Agent runtime permissions
-- `acso-{environment}-bedrock-role`: Bedrock AgentCore access
-
-### Network Security
-
-```bash
-# Verify security group configuration
-aws ec2 describe-security-groups \
-  --filters "Name=group-name,Values=acso-*"
-
-# Check VPC configuration
-aws ec2 describe-vpcs \
-  --filters "Name=tag:Name,Values=acso-*-vpc"
-```
+Logs are centralized in CloudWatch Logs:
+- `/aws/acso/development/agents` - Agent logs
+- `/aws/ecs/acso-api-server` - API server logs
+- `/aws/rds/instance/acso-development-db/error` - Database logs
 
 ## Scaling Configuration
 
 ### Auto Scaling
 
-```bash
-# Create auto scaling target
-aws application-autoscaling register-scalable-target \
-  --service-namespace ecs \
-  --resource-id service/acso-production-cluster/acso-production-supervisor \
-  --scalable-dimension ecs:service:DesiredCount \
-  --min-capacity 2 \
-  --max-capacity 10
+The deployment includes auto-scaling policies:
+- **Target CPU Utilization**: 70%
+- **Scale Up Cooldown**: 5 minutes
+- **Scale Down Cooldown**: 5 minutes
+- **Min Capacity**: 1 task per service
+- **Max Capacity**: 10 tasks per service
 
-# Create scaling policy
-aws application-autoscaling put-scaling-policy \
-  --service-namespace ecs \
-  --resource-id service/acso-production-cluster/acso-production-supervisor \
-  --scalable-dimension ecs:service:DesiredCount \
-  --policy-name acso-supervisor-scaling-policy \
-  --policy-type TargetTrackingScaling \
-  --target-tracking-scaling-policy-configuration file://scaling-policy.json
+### Manual Scaling
+
+To manually scale services:
+
+```powershell
+# Scale API server to 3 tasks
+aws ecs update-service --cluster acso-development-cluster --service acso-api-server --desired-count 3
 ```
 
-## Backup and Recovery
+## Troubleshooting
 
-### Data Backup
+### Common Issues
 
-```bash
-# Backup configuration
-aws ssm get-parameters-by-path \
-  --path "/acso/production" \
-  --recursive > acso-config-backup.json
+1. **Service Won't Start**
+   - Check CloudWatch logs
+   - Verify secrets are accessible
+   - Check security group rules
 
-# Backup CloudWatch logs
-aws logs create-export-task \
-  --log-group-name "/aws/acso/production/agents" \
-  --from 1640995200000 \
-  --to 1641081600000 \
-  --destination "acso-logs-backup-bucket"
+2. **Database Connection Issues**
+   - Verify RDS instance is running
+   - Check security group rules
+   - Verify secrets contain correct credentials
+
+3. **High Memory Usage**
+   - Check for memory leaks in logs
+   - Consider increasing task memory
+   - Review agent configurations
+
+### Debugging Commands
+
+```powershell
+# Check ECS service status
+aws ecs describe-services --cluster acso-development-cluster --services acso-api-server
+
+# View recent logs
+aws logs tail /aws/acso/development/agents --follow
+
+# Check task health
+aws ecs describe-tasks --cluster acso-development-cluster --tasks task-id
+
+# Connect to running container
+aws ecs execute-command --cluster acso-development-cluster --task task-id --container acso-api-server --interactive --command "/bin/bash"
 ```
 
-### Disaster Recovery
+## Backup and Disaster Recovery
 
-```bash
-# Create cross-region backup
-aws s3 sync s3://acso-production-backups s3://acso-dr-backups --region us-west-2
+### Automated Backups
 
-# Deploy to DR region
-AWS_REGION=us-west-2 ENVIRONMENT=production ./scripts/deploy-to-ecs.sh
+- **RDS**: Automated backups with 7-day retention
+- **Configuration**: Stored in S3 with versioning
+- **Secrets**: Managed by AWS Secrets Manager with automatic rotation
+
+### Manual Backup
+
+```powershell
+# Create manual RDS snapshot
+aws rds create-db-snapshot --db-instance-identifier acso-development-db --db-snapshot-identifier acso-manual-backup-$(Get-Date -Format "yyyyMMdd-HHmmss")
+
+# Export configuration
+aws s3 cp config/ s3://acso-development-artifacts-123456789/backups/config/ --recursive
 ```
 
-## Troubleshooting Common Issues
+## Cost Optimization
 
-### Deployment Failures
+### Development Environment
 
-```bash
-# Check ECS service events
-aws ecs describe-services \
-  --cluster acso-production-cluster \
-  --services acso-production-supervisor \
-  --query 'services[0].events'
+Estimated monthly cost: $150-300
+- ECS Fargate: $50-100
+- RDS t3.micro: $15-25
+- ElastiCache t3.micro: $15-25
+- Data transfer: $10-20
+- CloudWatch: $5-10
 
-# Check task definition
-aws ecs describe-task-definition \
-  --task-definition acso-production-supervisor
-```
+### Production Environment
 
-### Agent Communication Issues
+Estimated monthly cost: $800-1500
+- ECS Fargate: $300-600
+- RDS r5.large: $200-400
+- ElastiCache r5.large: $150-300
+- Load Balancer: $20-30
+- Data transfer: $50-100
+- CloudWatch: $20-50
 
-```bash
-# Check agent logs
-aws logs filter-log-events \
-  --log-group-name "/aws/acso/production/agents" \
-  --filter-pattern "ERROR"
+### Cost Reduction Tips
 
-# Test Bedrock connectivity
-aws bedrock-runtime invoke-model \
-  --model-id anthropic.claude-3-sonnet-20240229-v1:0 \
-  --body '{"prompt":"Hello","max_tokens":10}' \
-  --content-type application/json \
-  output.json
-```
+1. Use Spot instances for non-critical workloads
+2. Schedule development environment shutdown
+3. Use Reserved Instances for predictable workloads
+4. Monitor and optimize data transfer costs
+5. Use S3 Intelligent Tiering for artifacts
 
-### Performance Issues
+## Security Best Practices
 
-```bash
-# Check resource utilization
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/ECS \
-  --metric-name CPUUtilization \
-  --dimensions Name=ServiceName,Value=acso-production-supervisor \
-  --start-time 2024-01-01T00:00:00Z \
-  --end-time 2024-01-01T01:00:00Z \
-  --period 300 \
-  --statistics Average
-```
+1. **Network Security**
+   - Use private subnets for all services
+   - Implement least-privilege security groups
+   - Enable VPC Flow Logs
 
-## Maintenance Procedures
+2. **Data Protection**
+   - Enable encryption at rest for all data stores
+   - Use KMS for key management
+   - Implement proper backup encryption
 
-### Regular Maintenance
+3. **Access Control**
+   - Use IAM roles instead of access keys
+   - Implement least-privilege policies
+   - Enable MFA for administrative access
 
-1. **Weekly**: Review CloudWatch logs and metrics
-2. **Monthly**: Update container images and dependencies
-3. **Quarterly**: Review and update IAM policies
-4. **Annually**: Disaster recovery testing
+4. **Monitoring**
+   - Enable CloudTrail for all API calls
+   - Set up GuardDuty for threat detection
+   - Monitor for unusual access patterns
 
-### Updates and Patches
+## Support and Maintenance
 
-```bash
-# Update application
-git pull origin main
-./scripts/deploy-to-ecs.sh
+### Regular Maintenance Tasks
 
-# Update infrastructure
-cd infrastructure/cdk
-cdk diff
-cdk deploy
-```
+1. **Weekly**
+   - Review CloudWatch metrics
+   - Check for security updates
+   - Verify backup integrity
 
-## Support and Escalation
+2. **Monthly**
+   - Update container images
+   - Review and rotate secrets
+   - Analyze cost reports
 
-### Log Collection
+3. **Quarterly**
+   - Security assessment
+   - Performance optimization
+   - Disaster recovery testing
 
-```bash
-# Collect all relevant logs
-./scripts/collect-logs.sh --environment production --hours 24
+### Getting Help
 
-# Generate support bundle
-./scripts/generate-support-bundle.sh
-```
+1. Check CloudWatch logs first
+2. Review this deployment guide
+3. Check AWS service health dashboard
+4. Contact your AWS support team if needed
 
-### Emergency Contacts
+## Next Steps
 
-- **Development Team**: dev-team@company.com
-- **AWS Support**: [AWS Support Case]
-- **On-call Engineer**: [PagerDuty/Slack]
+After successful deployment:
 
-## Appendices
-
-### A. Required AWS Permissions
-
-See `docs/aws-permissions.md` for detailed IAM policy requirements.
-
-### B. Network Architecture
-
-See `docs/network-architecture.md` for VPC and security group details.
-
-### C. Monitoring Dashboards
-
-See `docs/monitoring-dashboards.md` for CloudWatch dashboard configurations.
+1. **Phase 3b Implementation**: Implement remaining integration tasks (7-11)
+2. **Custom Workflows**: Create organization-specific workflows
+3. **Integration**: Connect with existing security tools
+4. **Training**: Train team members on ACSO usage
+5. **Optimization**: Fine-tune performance and costs
 
 ---
 
-*This deployment guide should be reviewed and updated with each major release of the ACSO system.*
+**Note**: This deployment guide assumes a development environment. For production deployments, additional considerations for high availability, disaster recovery, and security hardening should be implemented.

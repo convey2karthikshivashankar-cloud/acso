@@ -1,108 +1,94 @@
-# Multi-stage Dockerfile for ACSO Prototype
+# Multi-stage Dockerfile for ACSO deployment
+
+# Base Python image
 FROM python:3.11-slim as base
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+# Set working directory
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
-WORKDIR /app
-
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy requirements
+COPY requirements-api.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Development stage
-FROM base as development
-
-# Install development dependencies
-COPY requirements-dev.txt .
-RUN pip install --no-cache-dir -r requirements-dev.txt
+RUN pip install --no-cache-dir -r requirements-api.txt
 
 # Copy source code
-COPY . .
+COPY src/ ./src/
+COPY config/ ./config/
+COPY .env.example .env
 
-# Set development environment
-ENV ENVIRONMENT=development
-ENV DEBUG=true
+# Create logs directory
+RUN mkdir -p logs
 
-# Expose port for development server
+# API Server Stage
+FROM base as api-server
 EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# Command for development
-CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-
-# Production stage
-FROM base as production
-
-# Create non-root user
-RUN groupadd -r acso && useradd -r -g acso acso
-
-# Copy source code
-COPY --chown=acso:acso src/ ./src/
-COPY --chown=acso:acso config/ ./config/
-COPY --chown=acso:acso *.py ./
-
-# Set production environment
-ENV ENVIRONMENT=production
-ENV DEBUG=false
-
-# Switch to non-root user
-USER acso
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Expose port
-EXPOSE 8000
-
-# Command for production
-CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
-
-# Agent-specific stages
-FROM production as supervisor-agent
-
+# Supervisor Agent Stage
+FROM base as supervisor-agent
 ENV AGENT_TYPE=supervisor
-ENV AGENT_ID=supervisor-001
-
 CMD ["python", "-m", "src.agents.supervisor_agent"]
 
-FROM production as threat-hunter-agent
-
+# Threat Hunter Agent Stage
+FROM base as threat-hunter-agent
 ENV AGENT_TYPE=threat-hunter
-ENV AGENT_ID=threat-hunter-001
-
 CMD ["python", "-m", "src.agents.threat_hunter_agent"]
 
-FROM production as incident-response-agent
-
+# Incident Response Agent Stage
+FROM base as incident-response-agent
 ENV AGENT_TYPE=incident-response
-ENV AGENT_ID=incident-response-001
-
 CMD ["python", "-m", "src.agents.incident_response_agent"]
 
-FROM production as service-orchestration-agent
-
+# Service Orchestration Agent Stage
+FROM base as service-orchestration-agent
 ENV AGENT_TYPE=service-orchestration
-ENV AGENT_ID=service-orchestration-001
-
 CMD ["python", "-m", "src.agents.service_orchestration_agent"]
 
-FROM production as financial-intelligence-agent
-
+# Financial Intelligence Agent Stage
+FROM base as financial-intelligence-agent
 ENV AGENT_TYPE=financial-intelligence
-ENV AGENT_ID=financial-intelligence-001
-
 CMD ["python", "-m", "src.agents.financial_intelligence_agent"]
+
+# Frontend Build Stage
+FROM node:18-alpine as frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy frontend source
+COPY frontend/ ./
+
+# Build frontend
+RUN npm run build
+
+# Frontend Serve Stage
+FROM nginx:alpine as frontend-server
+
+# Copy built frontend
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+# Development Stage (for local development)
+FROM base as development
+COPY frontend/ ./frontend/
+RUN pip install --no-cache-dir pytest pytest-asyncio httpx
+CMD ["python", "-m", "src.api.main"]

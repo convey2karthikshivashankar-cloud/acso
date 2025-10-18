@@ -1,0 +1,187 @@
+# ACSO Deployment Configuration
+
+environments:
+  development:
+    aws_region: us-east-1
+    cluster_name: acso-development-cluster
+    domain: dev.acso.local
+    ssl_enabled: false
+    
+    # Resource allocation
+    api_server:
+      cpu: 512
+      memory: 1024
+      desired_count: 1
+      
+    agents:
+      supervisor:
+        cpu: 256
+        memory: 512
+        desired_count: 1
+      threat_hunter:
+        cpu: 256
+        memory: 512
+        desired_count: 1
+      incident_response:
+        cpu: 256
+        memory: 512
+        desired_count: 1
+      service_orchestration:
+        cpu: 256
+        memory: 512
+        desired_count: 1
+      financial_intelligence:
+        cpu: 256
+        memory: 512
+        desired_count: 1
+    
+    # Database configuration
+    database:
+      instance_class: db.t3.micro
+      allocated_storage: 20
+      backup_retention: 7
+      multi_az: false
+      
+    # Redis configuration
+    redis:
+      node_type: cache.t3.micro
+      num_cache_nodes: 1
+      
+    # Monitoring
+    monitoring:
+      log_retention_days: 7
+      enable_detailed_monitoring: false
+      
+  staging:
+    aws_region: us-east-1
+    cluster_name: acso-staging-cluster
+    domain: staging.acso.com
+    ssl_enabled: true
+    
+    # Resource allocation
+    api_server:
+      cpu: 1024
+      memory: 2048
+      desired_count: 2
+      
+    agents:
+      supervisor:
+        cpu: 512
+        memory: 1024
+        desired_count: 1
+      threat_hunter:
+        cpu: 512
+        memory: 1024
+        desired_count: 2
+      incident_response:
+        cpu: 512
+        memory: 1024
+        desired_count: 2
+      service_orchestration:
+        cpu: 512
+        memory: 1024
+        desired_count: 1
+      financial_intelligence:
+        cpu: 512
+        memory: 1024
+        desired_count: 1
+    
+    # Database configuration
+    database:
+      instance_class: db.t3.small
+      allocated_storage: 100
+      backup_retention: 14
+      multi_az: true
+      
+    # Redis configuration
+    redis:
+      node_type: cache.t3.small
+      num_cache_nodes: 2
+      
+    # Monitoring
+    monitoring:
+      log_retention_days: 30
+      enable_detailed_monitoring: true
+      
+  production:
+    aws_region: us-east-1
+    cluster_name: acso-production-cluster
+    domain: acso.com
+    ssl_enabled: true
+    
+    # Resource allocation
+    api_server:
+      cpu: 2048
+      memory: 4096
+      desired_count: 3
+      
+    agents:
+      supervisor:
+        cpu: 1024
+        memory: 2048
+        desired_count: 2
+      threat_hunter:
+        cpu: 1024
+        memory: 2048
+        desired_count: 3
+      incident_response:
+        cpu: 1024
+        memory: 2048
+        desired_count: 3
+      service_orchestration:
+        cpu: 1024
+        memory: 2048
+        desired_count: 2
+      financial_intelligence:
+        cpu: 1024
+        memory: 2048
+        desired_count: 2
+    
+    # Database configuration
+    database:
+      instance_class: db.r5.large
+      allocated_storage: 500
+      backup_retention: 30
+      multi_az: true
+      
+    # Redis configuration
+    redis:
+      node_type: cache.r5.large
+      num_cache_nodes: 3
+      
+    # Monitoring
+    monitoring:
+      log_retention_days: 90
+      enable_detailed_monitoring: true
+
+# Common configuration
+common:
+  # Security
+  security:
+    enable_waf: true
+    enable_shield: true
+    enable_guardduty: true
+    
+  # Networking
+  networking:
+    vpc_cidr: "10.0.0.0/16"
+    private_subnet_cidrs:
+      - "10.0.1.0/24"
+      - "10.0.2.0/24"
+    public_subnet_cidrs:
+      - "10.0.101.0/24"
+      - "10.0.102.0/24"
+      
+  # Backup and disaster recovery
+  backup:
+    enable_automated_backups: true
+    backup_window: "03:00-04:00"
+    maintenance_window: "sun:04:00-sun:05:00"
+    
+  # Scaling
+  autoscaling:
+    target_cpu_utilization: 70
+    scale_up_cooldown: 300
+    scale_down_cooldown: 300
+    min_capacity: 1
+    max_capacity: 10
