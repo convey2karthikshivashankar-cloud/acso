@@ -6,9 +6,11 @@ import authReducer from './slices/authSlice';
 import uiReducer from './slices/uiSlice';
 import notificationReducer from './slices/notificationSlice';
 import dashboardReducer from './slices/dashboardSlice';
+import agentsReducer from './slices/agentsSlice';
 
 // Import API slices
 import { apiSlice } from './api/apiSlice';
+import { agentsApi } from './api/agentsApi';
 
 export const store = configureStore({
   reducer: {
@@ -16,17 +18,33 @@ export const store = configureStore({
     ui: uiReducer,
     notifications: notificationReducer,
     dashboard: dashboardReducer,
-    // Add the API slice
+    agents: agentsReducer,
+    // Add the API slices
     [apiSlice.reducerPath]: apiSlice.reducer,
+    [agentsApi.reducerPath]: agentsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-        ignoredPaths: ['api'],
+        ignoredActions: [
+          'persist/PERSIST', 
+          'persist/REHYDRATE',
+          // Ignore RTK Query actions
+          'agentsApi/executeQuery/pending',
+          'agentsApi/executeQuery/fulfilled',
+          'agentsApi/executeQuery/rejected',
+        ],
+        ignoredPaths: [
+          'api', 
+          'agentsApi',
+          // Ignore WebSocket message timestamps
+          'agents.realTimeUpdates',
+        ],
       },
-    }).concat(apiSlice.middleware),
-  devTools: true, // Enable Redux DevTools
+    })
+    .concat(apiSlice.middleware)
+    .concat(agentsApi.middleware),
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
 // Setup listeners for RTK Query

@@ -1,5 +1,27 @@
 // API-specific types
 
+export interface APIResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, any>;
+    timestamp: string;
+    request_id?: string;
+  };
+  timestamp: string;
+  request_id?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 export interface APIEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   url: string;
@@ -23,6 +45,258 @@ export interface APIError {
   timestamp: Date;
   requestId: string;
   status: number;
+}
+
+// Core data types matching backend models
+export enum AgentStatus {
+  ACTIVE = 'active',
+  IDLE = 'idle',
+  PROCESSING = 'processing',
+  ERROR = 'error',
+  OFFLINE = 'offline'
+}
+
+export enum AgentType {
+  SUPERVISOR = 'supervisor',
+  THREAT_HUNTER = 'threat-hunter',
+  INCIDENT_RESPONSE = 'incident-response',
+  SERVICE_ORCHESTRATION = 'service-orchestration',
+  FINANCIAL_INTELLIGENCE = 'financial-intelligence'
+}
+
+export interface Agent {
+  agent_id: string;
+  agent_type: AgentType;
+  status: AgentStatus;
+  name: string;
+  description: string;
+  capabilities: string[];
+  current_task?: string;
+  last_activity: string;
+  metrics: Record<string, any>;
+}
+
+export interface AgentConfiguration {
+  agent_id: string;
+  config: Record<string, any>;
+  version: string;
+  updated_by: string;
+  updated_at: string;
+}
+
+export interface AgentMetrics {
+  agent_id: string;
+  timestamp: string;
+  cpu_usage: number;
+  memory_usage: number;
+  task_count: number;
+  success_rate: number;
+  avg_response_time: number;
+}
+
+export enum TaskStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled'
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+export interface Task {
+  task_id: string;
+  type: string;
+  description: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  assigned_agent?: string;
+  context: Record<string, any>;
+  results: Record<string, any>;
+  created_at: string;
+  completed_at?: string;
+}
+
+export enum WorkflowStatus {
+  DRAFT = 'draft',
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  COMPLETED = 'completed',
+  FAILED = 'failed'
+}
+
+export interface WorkflowNode {
+  node_id: string;
+  type: string;
+  name: string;
+  config: Record<string, any>;
+  position: { x: number; y: number };
+}
+
+export interface WorkflowEdge {
+  edge_id: string;
+  source: string;
+  target: string;
+  condition?: string;
+}
+
+export interface Workflow {
+  workflow_id: string;
+  name: string;
+  description: string;
+  status: WorkflowStatus;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  tags: string[];
+}
+
+export interface WorkflowExecution {
+  execution_id: string;
+  workflow_id: string;
+  status: TaskStatus;
+  started_at: string;
+  completed_at?: string;
+  results: Record<string, any>;
+  error?: string;
+}
+
+export enum IncidentSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+export enum IncidentStatus {
+  OPEN = 'open',
+  INVESTIGATING = 'investigating',
+  CONTAINED = 'contained',
+  RESOLVED = 'resolved',
+  CLOSED = 'closed'
+}
+
+export interface Incident {
+  incident_id: string;
+  title: string;
+  description: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  category: string;
+  source: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+  resolved_at?: string;
+  metadata: Record<string, any>;
+  tags: string[];
+}
+
+export interface TimelineEvent {
+  event_id: string;
+  incident_id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  user_id?: string;
+  metadata: Record<string, any>;
+}
+
+export interface ResponseAction {
+  action_id: string;
+  incident_id: string;
+  name: string;
+  description: string;
+  status: TaskStatus;
+  executed_by?: string;
+  executed_at?: string;
+  results: Record<string, any>;
+}
+
+export interface CostData {
+  date: string;
+  service: string;
+  cost: number;
+  currency: string;
+  region?: string;
+  tags: Record<string, string>;
+}
+
+export interface CostBreakdown {
+  dimension: string;
+  value: string;
+  cost: number;
+  percentage: number;
+}
+
+export interface ROICalculation {
+  investment: number;
+  benefits: number[];
+  time_period: number;
+  discount_rate: number;
+}
+
+export interface ROIResults {
+  roi_percentage: number;
+  npv: number;
+  payback_period: number;
+  irr: number;
+}
+
+export interface SearchQuery {
+  query: string;
+  filters: Record<string, any>;
+  sort?: string;
+  order: 'asc' | 'desc';
+  limit: number;
+  offset: number;
+}
+
+export interface SearchResult<T> {
+  items: T[];
+  total: number;
+  query: string;
+  took: number;
+  facets: Record<string, any>;
+}
+
+export interface User {
+  user_id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  roles: string[];
+  permissions: string[];
+  last_login?: string;
+  created_at: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+  remember_me?: boolean;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface WebSocketMessage {
+  type: string;
+  data: Record<string, any>;
+  timestamp: string;
+  source?: string;
 }
 
 export interface APIConfig {

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, AuthState } from '../../types';
+import { apiClient } from '../../services/apiClient';
 
 const initialState: AuthState = {
   isAuthenticated: false,
@@ -13,65 +14,31 @@ const initialState: AuthState = {
 // Async thunks
 export const loginAsync = createAsyncThunk(
   'auth/login',
-  async (credentials: { email: string; password: string; rememberMe?: boolean }) => {
-    // Mock login - in real app, this would call the API
-    const mockUsers = [
-      {
-        id: '1',
-        email: 'admin@acso.com',
-        password: 'admin123',
-        firstName: 'Admin',
-        lastName: 'User',
-        roles: ['admin'],
-        permissions: [{ resource: '*', actions: ['*'] }],
-      },
-      {
-        id: '2',
-        email: 'security@acso.com',
-        password: 'security123',
-        firstName: 'Security',
-        lastName: 'Manager',
-        roles: ['security_manager'],
-        permissions: [{ resource: 'security', actions: ['*'] }],
-      },
-      {
-        id: '3',
-        email: 'operator@acso.com',
-        password: 'operator123',
-        firstName: 'System',
-        lastName: 'Operator',
-        roles: ['operator'],
-        permissions: [{ resource: 'agents', actions: ['read'] }],
-      },
-    ];
+  async (credentials: { username: string; password: string; rememberMe?: boolean; twoFactorCode?: string }) => {
+    const response = await apiClient.post('/auth/login', {
+      username: credentials.username,
+      password: credentials.password,
+      remember_me: credentials.rememberMe || false,
+      two_factor_code: credentials.twoFactorCode
+    });
 
-    const user = mockUsers.find(
-      (u) => u.email === credentials.email && u.password === credentials.password
-    );
-
-    if (!user) {
-      throw new Error('Invalid email or password');
+    if (!response.success || !response.data) {
+      throw new Error(response.error?.message || 'Login failed');
     }
 
-    const token = 'mock-jwt-token-' + user.id;
-    const refreshToken = 'mock-refresh-token-' + user.id;
+    const { access_token, refresh_token, user, expires_in, must_change_password } = response.data;
 
     // Store in localStorage
-    localStorage.setItem('acso-auth-token', token);
-    localStorage.setItem('acso-refresh-token', refreshToken);
+    localStorage.setItem('acso-auth-token', access_token);
+    localStorage.setItem('acso-refresh-token', refresh_token);
     localStorage.setItem('acso-user', JSON.stringify(user));
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: user.roles,
-        permissions: user.permissions,
-      },
-      token,
-      refreshToken,
+      user,
+      token: access_token,
+      refreshToken: refresh_token,
+      expiresIn: expires_in,
+      mustChangePassword: must_change_password
     };
   }
 );
@@ -80,20 +47,32 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async () => {
     const token = localStorage.getItem('acso-auth-token');
-    const userStr = localStorage.getItem('acso-user');
+    const refreshToken = localStorage.getItem('acso-refresh-token');
 
-    if (!token || !userStr) {
+    if (!token) {
       throw new Error('No authentication found');
     }
 
-    const user = JSON.parse(userStr);
-    const refreshToken = localStorage.getItem('acso-refresh-token');
+    // Validate token with backend
+    try {
+      const response = await apiClient.get('/auth/me');
+      
+      if (!response.success || !response.data) {
+        throw new Error('Token validation failed');
+      }
 
-    return {
-      user,
-      token,
-      refreshToken: refreshToken || '',
-    };
+      return {
+        user: response.data,
+        token,
+        refreshToken: refreshToken || '',
+      };
+    } catch (error) {
+      // Clear invalid tokens
+      localStorage.removeItem('acso-auth-token');
+      localStorage.removeItem('acso-refresh-token');
+      localStorage.removeItem('acso-user');
+      throw error;
+    }
   }
 );
 
@@ -119,10 +98,16 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
-    updateToken: (state, action: PayloadAction<{ token: string; refreshToken?: string }>) => {
-      state.token = action.payload.token;
+    setTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken?: string; expiresIn?: number }>) => {
+      state.token = action.payload.accessToken;
       if (action.payload.refreshToken) {
         state.refreshToken = action.payload.refreshToken;
+      }
+      
+      // Update localStorage
+      localStorage.setItem('acso-auth-token', action.payload.accessToken);
+      if (action.payload.refreshToken) {
+        localStorage.setItem('acso-refresh-token', action.payload.refreshToken);
       }
     },
     clearError: (state) => {
@@ -178,7 +163,7 @@ const authSlice = createSlice({
 export const {
   logout,
   updateUser,
-  updateToken,
+  setTokens,
   clearError,
 } = authSlice.actions;
 

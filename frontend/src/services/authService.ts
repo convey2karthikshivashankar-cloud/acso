@@ -24,15 +24,20 @@ class AuthService {
     const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
     
     if (response.success && response.data) {
-      this.setTokens(response.data.token, response.data.refreshToken);
+      this.setTokens(response.data.access_token, response.data.refresh_token);
       this.setUser(response.data.user);
-      return response.data;
+      return {
+        user: response.data.user,
+        token: response.data.access_token,
+        refreshToken: response.data.refresh_token,
+        expiresIn: response.data.expires_in
+      };
     }
     
-    throw new Error(response.message || 'Login failed');
+    throw new Error(response.error?.message || 'Login failed');
   }
 
-  // OAuth login
+  // OAuth login (placeholder - not implemented in backend yet)
   async loginWithOAuth(provider: string, code: string, state?: string): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>('/auth/oauth/callback', {
       provider,
@@ -41,15 +46,20 @@ class AuthService {
     });
     
     if (response.success && response.data) {
-      this.setTokens(response.data.token, response.data.refreshToken);
+      this.setTokens(response.data.access_token, response.data.refresh_token);
       this.setUser(response.data.user);
-      return response.data;
+      return {
+        user: response.data.user,
+        token: response.data.access_token,
+        refreshToken: response.data.refresh_token,
+        expiresIn: response.data.expires_in
+      };
     }
     
-    throw new Error(response.message || 'OAuth login failed');
+    throw new Error(response.error?.message || 'OAuth login failed');
   }
 
-  // SAML login
+  // SAML login (placeholder - not implemented in backend yet)
   async loginWithSAML(samlResponse: string, relayState?: string): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>('/auth/saml/callback', {
       samlResponse,
@@ -57,12 +67,17 @@ class AuthService {
     });
     
     if (response.success && response.data) {
-      this.setTokens(response.data.token, response.data.refreshToken);
+      this.setTokens(response.data.access_token, response.data.refresh_token);
       this.setUser(response.data.user);
-      return response.data;
+      return {
+        user: response.data.user,
+        token: response.data.access_token,
+        refreshToken: response.data.refresh_token,
+        expiresIn: response.data.expires_in
+      };
     }
     
-    throw new Error(response.message || 'SAML login failed');
+    throw new Error(response.error?.message || 'SAML login failed');
   }
 
   // Logout
@@ -70,7 +85,10 @@ class AuthService {
     try {
       const refreshToken = this.getRefreshToken();
       if (refreshToken) {
-        await apiClient.post('/auth/logout', { refreshToken });
+        await apiClient.post('/auth/logout', { 
+          refresh_token: refreshToken,
+          logout_all_devices: false 
+        });
       }
     } catch (error) {
       console.warn('Logout API call failed:', error);
@@ -87,16 +105,21 @@ class AuthService {
       throw new Error('No refresh token available');
     }
 
-    const response = await apiClient.post<RefreshTokenResponse>('/auth/refresh', {
-      refreshToken,
+    const response = await apiClient.post<{ access_token: string; expires_in: number }>('/auth/refresh', {
+      refresh_token: refreshToken,
     });
     
     if (response.success && response.data) {
-      this.setTokens(response.data.token, response.data.refreshToken);
-      return response.data;
+      // Keep the same refresh token, only update access token
+      this.setTokens(response.data.access_token, refreshToken);
+      return {
+        token: response.data.access_token,
+        refreshToken: refreshToken,
+        expiresIn: response.data.expires_in
+      };
     }
     
-    throw new Error(response.message || 'Token refresh failed');
+    throw new Error(response.error?.message || 'Token refresh failed');
   }
 
   // Get current user
@@ -108,30 +131,31 @@ class AuthService {
       return response.data;
     }
     
-    throw new Error(response.message || 'Failed to get current user');
+    throw new Error(response.error?.message || 'Failed to get current user');
   }
 
   // Update user profile
   async updateProfile(updates: Partial<User>): Promise<User> {
-    const response = await apiClient.put<User>('/auth/profile', updates);
+    const response = await apiClient.put<User>('/auth/me', updates);
     
     if (response.success && response.data) {
       this.setUser(response.data);
       return response.data;
     }
     
-    throw new Error(response.message || 'Failed to update profile');
+    throw new Error(response.error?.message || 'Failed to update profile');
   }
 
   // Change password
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     const response = await apiClient.post('/auth/change-password', {
-      currentPassword,
-      newPassword,
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: newPassword,
     });
     
     if (!response.success) {
-      throw new Error(response.message || 'Failed to change password');
+      throw new Error(response.error?.message || 'Failed to change password');
     }
   }
 
@@ -140,7 +164,7 @@ class AuthService {
     const response = await apiClient.post('/auth/reset-password', { email });
     
     if (!response.success) {
-      throw new Error(response.message || 'Failed to send reset email');
+      throw new Error(response.error?.message || 'Failed to send reset email');
     }
   }
 
@@ -148,57 +172,54 @@ class AuthService {
   async confirmPasswordReset(token: string, newPassword: string): Promise<void> {
     const response = await apiClient.post('/auth/reset-password/confirm', {
       token,
-      newPassword,
+      new_password: newPassword,
+      confirm_password: newPassword,
     });
     
     if (!response.success) {
-      throw new Error(response.message || 'Failed to reset password');
+      throw new Error(response.error?.message || 'Failed to reset password');
     }
   }
 
-  // Get available auth providers
+  // Get available auth providers (placeholder - not implemented in backend yet)
   async getAuthProviders(): Promise<AuthProvider[]> {
-    const response = await apiClient.get<AuthProvider[]>('/auth/providers');
-    
-    if (response.success && response.data) {
-      return response.data;
+    try {
+      const response = await apiClient.get<AuthProvider[]>('/auth/providers');
+      
+      if (response.success && response.data) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Auth providers endpoint not available:', error);
     }
     
     return [];
   }
 
-  // MFA methods
-  async enableMFA(): Promise<{ qrCode: string; secret: string }> {
-    const response = await apiClient.post<{ qrCode: string; secret: string }>('/auth/mfa/enable');
+  // Two-Factor Authentication methods
+  async setupTwoFactor(): Promise<{ qr_code_url: string; secret_key: string; backup_codes: string[] }> {
+    const response = await apiClient.post<{ qr_code_url: string; secret_key: string; backup_codes: string[] }>('/auth/setup-2fa');
     
     if (response.success && response.data) {
       return response.data;
     }
     
-    throw new Error(response.message || 'Failed to enable MFA');
+    throw new Error(response.error?.message || 'Failed to setup two-factor authentication');
   }
 
-  async confirmMFA(token: string): Promise<void> {
-    const response = await apiClient.post('/auth/mfa/confirm', { token });
+  async verifyTwoFactor(code: string): Promise<void> {
+    const response = await apiClient.post('/auth/verify-2fa', { code });
     
     if (!response.success) {
-      throw new Error(response.message || 'Failed to confirm MFA');
+      throw new Error(response.error?.message || 'Failed to verify two-factor authentication');
     }
   }
 
-  async disableMFA(token: string): Promise<void> {
-    const response = await apiClient.post('/auth/mfa/disable', { token });
+  async disableTwoFactor(code: string): Promise<void> {
+    const response = await apiClient.post('/auth/disable-2fa', { code });
     
     if (!response.success) {
-      throw new Error(response.message || 'Failed to disable MFA');
-    }
-  }
-
-  async verifyMFA(token: string): Promise<void> {
-    const response = await apiClient.post('/auth/mfa/verify', { token });
-    
-    if (!response.success) {
-      throw new Error(response.message || 'Invalid MFA token');
+      throw new Error(response.error?.message || 'Failed to disable two-factor authentication');
     }
   }
 
