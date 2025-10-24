@@ -19,7 +19,10 @@
     "type-check": "tsc --noEmit",
     "analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "demo": "npm run dev -- --port 5173",
+    "demo:build": "npm run build && npm run preview",
+    "demo:setup": "npm install && npm run type-check"
   },
   "dependencies": {
     "react": "^18.2.0",
