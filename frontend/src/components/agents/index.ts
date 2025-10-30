@@ -1,3 +1,8 @@
+// Import types for internal use
+import type { Agent } from './AgentOverview';
+import type { AgentConnection } from './AgentTopology';
+import type { AgentMetric } from './AgentMetrics';
+
 // Agent Management Components
 export { AgentOverview } from './AgentOverview';
 export type { Agent, AgentOverviewProps } from './AgentOverview';
@@ -370,7 +375,23 @@ export const getAgentStatusSummary = (agents: Agent[]) => {
   };
 
   agents.forEach(agent => {
-    summary[agent.status]++;
+    switch (agent.status) {
+      case 'online':
+        summary.online++;
+        break;
+      case 'offline':
+        summary.offline++;
+        break;
+      case 'warning':
+        summary.warning++;
+        break;
+      case 'error':
+        summary.error++;
+        break;
+      case 'maintenance':
+        summary.maintenance++;
+        break;
+    }
     summary.avgHealth += agent.health.score;
     summary.totalTasks += agent.performance.tasksCompleted;
     summary.avgResponseTime += agent.performance.averageResponseTime;

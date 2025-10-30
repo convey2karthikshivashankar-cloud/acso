@@ -33,12 +33,16 @@ class WebSocketService {
   private ws: WebSocket | null = null;
   private baseURL: string;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
+  private maxReconnectDelay = 30000;
   private heartbeatInterval: number | null = null;
   private connectionId: string | null = null;
   private isConnecting = false;
   private shouldReconnect = true;
+  private connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting' = 'disconnected';
+  private lastHeartbeat: number = 0;
+  private heartbeatTimeout: number | null = null;
 
   // Event handlers
   private messageHandlers: Map<string, Set<MessageHandler>> = new Map();

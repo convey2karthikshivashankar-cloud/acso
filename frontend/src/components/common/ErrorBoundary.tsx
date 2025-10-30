@@ -18,6 +18,8 @@ interface State {
 
 export class ErrorBoundary extends Component<Props, State> {
   private resetTimeoutId: number | null = null;
+  private retryCount: number = 0;
+  private maxRetries: number = 3;
 
   constructor(props: Props) {
     super(props);
@@ -99,12 +101,23 @@ export class ErrorBoundary extends Component<Props, State> {
       this.resetTimeoutId = null;
     }
 
+    this.retryCount++;
     this.setState({
       hasError: false,
       error: null,
       errorInfo: null,
       errorId: null,
     });
+  };
+
+  handleRetry = () => {
+    if (this.retryCount < this.maxRetries) {
+      this.resetErrorBoundary();
+    }
+  };
+
+  handleReload = () => {
+    window.location.reload();
   };
 
   render() {
@@ -116,7 +129,17 @@ export class ErrorBoundary extends Component<Props, State> {
         return fallback(error, errorInfo!);
       }
 
-      return <DefaultErrorFallback error={error} errorInfo={errorInfo!} onReset={this.resetErrorBoundary} />;
+      return (
+        <DefaultErrorFallback 
+          error={error} 
+          errorInfo={errorInfo!} 
+          onReset={this.resetErrorBoundary}
+          onRetry={this.handleRetry}
+          onReload={this.handleReload}
+          canRetry={this.retryCount < this.maxRetries}
+          retryCount={this.retryCount}
+        />
+      );
     }
 
     return children;
@@ -127,14 +150,69 @@ interface DefaultErrorFallbackProps {
   error: Error;
   errorInfo: ErrorInfo;
   onReset: () => void;
+  onRetry: () => void;
+  onReload: () => void;
+  canRetry: boolean;
+  retryCount: number;
 }
 
-function DefaultErrorFallback({ error, errorInfo, onReset }: DefaultErrorFallbackProps) {
+function DefaultErrorFallback({ 
+  error, 
+  errorInfo, 
+  onReset, 
+  onRetry, 
+  onReload, 
+  canRetry, 
+  retryCount 
+}: DefaultErrorFallbackProps) {
   const fallbackData = getErrorBoundaryFallback(error, errorInfo);
 
   return (
     <div className="error-boundary">
       <div className="error-boundary__container">
+        <div className="error-boundary__icon">⚠️</div>
+        <h2 className="error-boundary__title">Something went wrong</h2>
+        <p className="error-boundary__message">{fallbackData.message}</p>
+        
+        {retryCount > 0 && (
+          <p className="error-boundary__retry-info">
+            Retry attempts: {retryCount}/3
+          </p>
+        )}
+        
+        <div className="error-boundary__actions">
+          {canRetry && (
+            <button 
+              className="error-boundary__button error-boundary__button--primary"
+              onClick={onRetry}
+            >
+              Try Again
+            </button>
+          )}
+          <button 
+            className="error-boundary__button error-boundary__button--secondary"
+            onClick={onReset}
+          >
+            Reset Component
+          </button>
+          <button 
+            className="error-boundary__button error-boundary__button--tertiary"
+            onClick={onReload}
+          >
+            Reload Page
+          </button>
+        </div>
+        
+        <details className="error-boundary__details">
+          <summary>Technical Details</summary>
+          <pre className="error-boundary__stack">
+            {error.stack}
+          </pre>
+        </details>
+      </div>
+    </div>
+  );
+}
         <div className="error-boundary__icon">
           {fallbackData.severity === 'critical' ? '💥' : '⚠️'}
         </div>

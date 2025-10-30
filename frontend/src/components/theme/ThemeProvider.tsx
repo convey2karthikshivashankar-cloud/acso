@@ -48,6 +48,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     };
   }, []);
 
+  // Persist theme preference
+  useEffect(() => {
+    localStorage.setItem('acso-theme-mode', themeMode);
+  }, [themeMode]);
+
+  // Load theme preference on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('acso-theme-mode') as ThemeMode;
+    if (savedTheme && savedTheme !== themeMode) {
+      dispatch(setTheme(savedTheme));
+    }
+  }, [dispatch, themeMode]);
+
   // Listen for reduced motion preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -86,6 +99,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const newMode = themeMode === 'light' ? 'dark' : 'light';
     handleSetThemeMode(newMode);
   };
+
+  // Determine the actual theme to use
+  const actualThemeMode = themeMode === 'auto' ? systemPreference : themeMode;
+  const theme = getTheme(actualThemeMode);
+
+  const contextValue: ThemeContextValue = {
+    themeMode,
+    setThemeMode: handleSetThemeMode,
+    toggleTheme,
+  };
+
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
+    </ThemeContext.Provider>
+  );
+};
 
   // Determine the actual theme to use
   const actualThemeMode = themeMode === 'auto' ? systemPreference : themeMode;

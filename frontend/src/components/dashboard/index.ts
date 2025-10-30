@@ -124,12 +124,13 @@ export const createDashboardTemplate = (
     preventCollision: false,
     ...settings,
   },
+  createdAt: new Date(),
+  updatedAt: new Date(),
 });
 
 // Dashboard layout utilities
 export const calculateOptimalLayout = (
   widgets: DashboardWidget[],
-  containerWidth: number,
   cols: number = 12
 ) => {
   let currentX = 0;
@@ -137,8 +138,10 @@ export const calculateOptimalLayout = (
   let maxHeightInRow = 0;
 
   return widgets.map(widget => {
-    const widgetWidth = widget.layout.w;
-    const widgetHeight = widget.layout.h;
+    const defaultLayout = { x: 0, y: 0, w: 4, h: 3 };
+    const widgetLayout = widget.layout || defaultLayout;
+    const widgetWidth = widgetLayout.w;
+    const widgetHeight = widgetLayout.h;
 
     // Check if widget fits in current row
     if (currentX + widgetWidth > cols) {
@@ -149,7 +152,7 @@ export const calculateOptimalLayout = (
     }
 
     const layout = {
-      ...widget.layout,
+      ...widgetLayout,
       x: currentX,
       y: currentY,
     };
