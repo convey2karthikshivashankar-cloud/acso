@@ -15,5 +15,7 @@ export {
 export * from '../../utils/accessibility';
 
 // Accessibility Hooks
-export * from '../../hooks/useAccessibility';exp
-ort { AccessibilityPanel } from './AccessibilityPanel';
+export * from '../../hooks/useAccessibility';
+
+// Accessibility Panel
+export { AccessibilityPanel } from './AccessibilityPanel';

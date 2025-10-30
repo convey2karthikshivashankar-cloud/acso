@@ -194,13 +194,12 @@ export const dashboardThemes = {
     headerBackground: '#f0f0f0',
     textColor: '#333333',
   },
-};// D
-ashboard Customization Components
-export { DashboardCustomizer } from './DashboardCustomizer';
+};
+
+// Dashboard Customization Components
 export { DashboardThemeProvider, DashboardCustomizationProvider, useDashboardCustomization, createDefaultCustomization } from './DashboardThemeProvider';
 export { DashboardPresetBrowser } from './DashboardPresetBrowser';
 export { EnhancedDashboard } from './EnhancedDashboard';
 
 // Customization Types
-export type { DashboardCustomization } from './DashboardCustomizer';
 export type { DashboardPreset, UserPersonalization } from '../services/dashboardPersonalizationService';

@@ -421,8 +421,9 @@ export const getAgentsByLocation = (agents: Agent[]) => {
   });
 
   return byLocation;
-};/
-/ Configuration Management Components
+};
+
+// Configuration Management Components
 export { AgentConfigurationManager } from './AgentConfigurationManager';
 export { ConfigurationVersioning } from './ConfigurationVersioning';
 export { BulkConfigurationManager } from './BulkConfigurationManager';
@@ -440,8 +441,9 @@ export type {
 export type { 
   BulkOperation, 
   BulkOperationResult 
-} from './BulkConfigurationManager';//
- Log Viewer and Diagnostics Components
+} from './BulkConfigurationManager';
+
+// Log Viewer and Diagnostics Components
 export { AgentLogViewer } from './AgentLogViewer';
 export { AgentDiagnostics } from './AgentDiagnostics';
 

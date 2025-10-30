@@ -98,12 +98,6 @@ export const LazyIncidentManagementDashboard = createLazyComponent(
 );
 
 // Dashboard Components (lazy loaded for better performance)
-export const LazyDashboardCustomizer = createLazyComponent(
-  () => import('../components/dashboard/DashboardCustomizer'),
-  {
-    fallback: () => <LoadingFallback message="Loading Customizer..." />,
-  }
-);
 
 export const LazyEnhancedDashboard = createLazyComponent(
   () => import('../components/dashboard/EnhancedDashboard'),
