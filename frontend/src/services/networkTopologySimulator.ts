@@ -477,7 +477,7 @@ class NetworkTopologySimulator {
     const variation = 0.15;
     
     metrics.utilization = Math.max(0, Math.min(100, metrics.utilization + (Math.random() - 0.5) * metrics.utilization * variation));
-    metrics.latency = Math.max(1, metrics.latency + (Math.random() - 0.5) * metrics.latency * variation));
+    metrics.latency = Math.max(1, metrics.latency + (Math.random() - 0.5) * metrics.latency * variation);
     metrics.packetLoss = Math.max(0, Math.min(5, metrics.packetLoss + (Math.random() - 0.5) * 0.2));
     metrics.jitter = Math.max(0, metrics.jitter + (Math.random() - 0.5) * 2);
     metrics.throughput = Math.max(0, metrics.bandwidth * (metrics.utilization / 100) + (Math.random() - 0.5) * metrics.bandwidth * 0.1);

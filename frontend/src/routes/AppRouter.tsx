@@ -11,7 +11,7 @@ import { Box, LinearProgress } from '@mui/material';
 import { ErrorBoundary, PageErrorBoundary } from '../components/common/ErrorBoundary';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { AppLayout } from '../components/layout/AppLayout';
-import { useAuth } from '../hooks/useAuth';
+import useAuth from '../hooks/useAuth';
 import { useGlobalLoading } from '../components/common/GlobalLoadingProvider';
 
 // Lazy load pages for better performance

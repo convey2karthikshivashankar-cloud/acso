@@ -5,8 +5,15 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import App from './App';
+import productionConfig from './config/productionConfig';
 
 import './index.css';
+
+// Initialize production features
+if (productionConfig.demo.enabled && productionConfig.demo.autoStart) {
+  console.log('🎭 ACSO Enterprise UI - Demo Mode Enabled');
+  console.log('📊 Live data simulation will start automatically');
+}
 
 // Create React Query client
 const queryClient = new QueryClient({
