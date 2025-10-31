@@ -65,14 +65,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     
-    const handleChange = (e: MediaQueryListEvent) => {
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
       // Update theme with reduced motion settings
+      const matches = 'matches' in e ? e.matches : (e as MediaQueryList).matches;
       document.documentElement.style.setProperty(
         '--motion-duration',
-        e.matches ? '0ms' : '300ms'
+        matches ? '0ms' : '300ms'
       );
     };
 
+    // Set initial value
     handleChange(mediaQuery);
     mediaQuery.addEventListener('change', handleChange);
     
@@ -99,26 +101,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const newMode = themeMode === 'light' ? 'dark' : 'light';
     handleSetThemeMode(newMode);
   };
-
-  // Determine the actual theme to use
-  const actualThemeMode = themeMode === 'auto' ? systemPreference : themeMode;
-  const theme = getTheme(actualThemeMode);
-
-  const contextValue: ThemeContextValue = {
-    themeMode,
-    setThemeMode: handleSetThemeMode,
-    toggleTheme,
-  };
-
-  return (
-    <ThemeContext.Provider value={contextValue}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </MuiThemeProvider>
-    </ThemeContext.Provider>
-  );
-};
 
   // Determine the actual theme to use
   const actualThemeMode = themeMode === 'auto' ? systemPreference : themeMode;

@@ -38,7 +38,7 @@ import {
   Timeline,
   Speed,
   Memory,
-  Cpu,
+  Computer,
 } from '@mui/icons-material';
 
 export interface Agent {
@@ -304,7 +304,7 @@ export const AgentOverview: React.FC<AgentOverviewProps> = ({
             <Grid item xs={3}>
               <Tooltip title={`CPU: ${agent.health.cpu}%`}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Cpu fontSize="small" color="action" />
+                  <Computer fontSize="small" color="action" />
                   <Typography variant="caption" display="block">
                     {agent.health.cpu}%
                   </Typography>

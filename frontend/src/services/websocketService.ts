@@ -36,13 +36,13 @@ class WebSocketService {
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
   private maxReconnectDelay = 30000;
-  private heartbeatInterval: number | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
   private connectionId: string | null = null;
   private isConnecting = false;
   private shouldReconnect = true;
   private connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting' = 'disconnected';
   private lastHeartbeat: number = 0;
-  private heartbeatTimeout: number | null = null;
+  private heartbeatTimeout: NodeJS.Timeout | null = null;
 
   // Event handlers
   private messageHandlers: Map<string, Set<MessageHandler>> = new Map();
@@ -472,6 +472,43 @@ class WebSocketService {
 
   getReconnectAttempts(): number {
     return this.reconnectAttempts;
+  }
+
+  isSocketConnected(): boolean {
+    return this.isConnected();
+  }
+
+  getConnectionState(): string {
+    if (this.isConnecting) return 'connecting';
+    if (this.isConnected()) return 'connected';
+    if (this.reconnectAttempts > 0) return 'reconnecting';
+    return 'disconnected';
+  }
+
+  // Room management methods
+  joinRoom(roomName: string): void {
+    this.send({
+      type: 'join_room',
+      data: { room: roomName }
+    });
+  }
+
+  leaveRoom(roomName: string): void {
+    this.send({
+      type: 'leave_room',
+      data: { room: roomName }
+    });
+  }
+
+  // Event emission
+  emit(event: string, data?: any): void {
+    this.send({
+      type: 'event',
+      data: {
+        event,
+        payload: data
+      }
+    });
   }
 }
 

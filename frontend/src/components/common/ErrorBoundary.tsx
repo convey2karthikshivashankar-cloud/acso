@@ -213,42 +213,6 @@ function DefaultErrorFallback({
     </div>
   );
 }
-        <div className="error-boundary__icon">
-          {fallbackData.severity === 'critical' ? '💥' : '⚠️'}
-        </div>
-        
-        <h2 className="error-boundary__title">{fallbackData.title}</h2>
-        
-        <p className="error-boundary__message">{fallbackData.message}</p>
-        
-        {fallbackData.canRetry && (
-          <button 
-            className="error-boundary__retry-button"
-            onClick={onReset}
-          >
-            Try Again
-          </button>
-        )}
-        
-        <button 
-          className="error-boundary__reload-button"
-          onClick={() => window.location.reload()}
-        >
-          Reload Page
-        </button>
-        
-        {fallbackData.details && (
-          <details className="error-boundary__details">
-            <summary>Technical Details</summary>
-            <pre className="error-boundary__error-details">
-              {JSON.stringify(fallbackData.details, null, 2)}
-            </pre>
-          </details>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Higher-order component for easier usage
 export function withErrorBoundary<P extends object>(

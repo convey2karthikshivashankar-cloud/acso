@@ -1,4 +1,4 @@
-/* WCAG 2.1 AA Accessibility Styles */
+/* Accessibility Styles for ACSO Enterprise UI */
 
 /* Screen reader only content */
 .sr-only {
@@ -16,61 +16,349 @@
 /* Skip links */
 .skip-links {
   position: absolute;
-  top: -40px;
-  left: 6px;
-  z-index: 9999;
-}
-
-.skip-links:focus-within {
-  top: 6px;
+  top: -100px;
+  left: 0;
+  z-index: 10000;
 }
 
 .skip-link {
   position: absolute;
-  left: -9999px;
-  z-index: 999;
-  padding: 8px;
-  background-color: #000;
+  top: 0;
+  left: 0;
+  background: #000;
   color: #fff;
+  padding: 8px 16px;
   text-decoration: none;
-  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+  transition: top 0.3s ease;
 }
 
 .skip-link:focus {
-  left: 6px;
-  top: 6px;
+  top: 0;
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
 }
 
-/* Focus indicators */
-.focus-visible {
-  outline: 2px solid #0066cc !important;
+/* High contrast mode */
+.high-contrast {
+  --primary-main: #ffffff !important;
+  --primary-light: #ffffff !important;
+  --primary-dark: #cccccc !important;
+  --secondary-main: #ffff00 !important;
+  --background-default: #000000 !important;
+  --background-paper: #000000 !important;
+  --text-primary: #ffffff !important;
+  --text-secondary: #ffffff !important;
+}
+
+.high-contrast * {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.high-contrast button,
+.high-contrast .MuiButton-root {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast button:hover,
+.high-contrast .MuiButton-root:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select,
+.high-contrast .MuiTextField-root input {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast a,
+.high-contrast .MuiLink-root {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast a:hover,
+.high-contrast .MuiLink-root:hover {
+  color: #ffffff !important;
+  background-color: #ffff00 !important;
+}
+
+/* Reduced motion */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Large text mode */
+.large-text {
+  font-size: 1.25em !important;
+}
+
+.large-text button,
+.large-text .MuiButton-root {
+  min-height: 48px !important;
+  font-size: 1.125rem !important;
+  padding: 12px 24px !important;
+}
+
+.large-text input,
+.large-text textarea,
+.large-text select,
+.large-text .MuiTextField-root input {
+  min-height: 48px !important;
+  font-size: 1.125rem !important;
+  padding: 12px !important;
+}
+
+.large-text .MuiIconButton-root {
+  min-width: 48px !important;
+  min-height: 48px !important;
+}
+
+/* Screen reader mode */
+.screen-reader-mode {
+  /* Enhanced focus indicators for screen readers */
+}
+
+.screen-reader-mode *:focus {
+  outline: 3px solid #005fcc !important;
   outline-offset: 2px !important;
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .MuiButton-root {
-    border: 2px solid currentColor !important;
+/* Focus visible enhancements */
+.focus-visible-enabled *:focus-visible {
+  outline: 3px solid #005fcc !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 6px rgba(0, 95, 204, 0.2) !important;
+}
+
+.focus-visible-enabled button:focus-visible,
+.focus-visible-enabled .MuiButton-root:focus-visible {
+  outline: 3px solid #005fcc !important;
+  outline-offset: 2px !important;
+}
+
+.focus-visible-enabled input:focus-visible,
+.focus-visible-enabled textarea:focus-visible,
+.focus-visible-enabled select:focus-visible,
+.focus-visible-enabled .MuiTextField-root input:focus-visible {
+  outline: 3px solid #005fcc !important;
+  outline-offset: 2px !important;
+}
+
+.focus-visible-enabled a:focus-visible,
+.focus-visible-enabled .MuiLink-root:focus-visible {
+  outline: 3px solid #005fcc !important;
+  outline-offset: 2px !important;
+  text-decoration: underline !important;
+}
+
+/* Color blind support */
+.colorblind-protanopia {
+  filter: url('#protanopia-filter');
+}
+
+.colorblind-deuteranopia {
+  filter: url('#deuteranopia-filter');
+}
+
+.colorblind-tritanopia {
+  filter: url('#tritanopia-filter');
+}
+
+/* Custom properties for accessibility */
+:root {
+  --accessibility-font-scale: 1;
+  --accessibility-line-height: 1.5;
+  --accessibility-letter-spacing: 0px;
+  --motion-duration: 300ms;
+}
+
+/* Apply accessibility font scaling */
+body {
+  font-size: calc(1rem * var(--accessibility-font-scale));
+  line-height: var(--accessibility-line-height);
+  letter-spacing: var(--accessibility-letter-spacing);
+}
+
+/* Keyboard navigation helpers */
+.keyboard-navigation-active {
+  /* Show focus indicators when keyboard navigation is active */
+}
+
+.keyboard-navigation-active *:focus {
+  outline: 3px solid #005fcc !important;
+  outline-offset: 2px !important;
+}
+
+/* Error boundary styles */
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: var(--background-default, #f5f5f5);
+}
+
+.error-boundary__container {
+  max-width: 600px;
+  text-align: center;
+  background: var(--background-paper, #ffffff);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error-boundary__icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.error-boundary__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary, #333);
+}
+
+.error-boundary__message {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary, #666);
+}
+
+.error-boundary__retry-info {
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  color: var(--text-secondary, #666);
+}
+
+.error-boundary__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.error-boundary__button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--motion-duration, 300ms) ease;
+  min-height: 44px;
+}
+
+.error-boundary__button--primary {
+  background-color: var(--primary-main, #1976d2);
+  color: white;
+}
+
+.error-boundary__button--primary:hover {
+  background-color: var(--primary-dark, #1565c0);
+}
+
+.error-boundary__button--secondary {
+  background-color: var(--secondary-main, #dc004e);
+  color: white;
+}
+
+.error-boundary__button--secondary:hover {
+  background-color: var(--secondary-dark, #c51162);
+}
+
+.error-boundary__button--tertiary {
+  background-color: transparent;
+  color: var(--text-primary, #333);
+  border: 1px solid var(--text-secondary, #666);
+}
+
+.error-boundary__button--tertiary:hover {
+  background-color: var(--background-default, #f5f5f5);
+}
+
+.error-boundary__button:focus-visible {
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
+}
+
+.error-boundary__details {
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.error-boundary__details summary {
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary, #333);
+}
+
+.error-boundary__details summary:focus-visible {
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
+}
+
+.error-boundary__stack {
+  background-color: var(--background-default, #f5f5f5);
+  padding: 1rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary, #333);
+}
+
+/* Responsive accessibility */
+@media (max-width: 768px) {
+  .error-boundary__actions {
+    flex-direction: column;
+    align-items: center;
   }
   
-  .MuiCard-root {
-    border: 1px solid currentColor !important;
-  }
-  
-  .MuiChip-root {
-    border: 1px solid currentColor !important;
-  }
-  
-  .MuiTextField-root .MuiOutlinedInput-root fieldset {
-    border-width: 2px !important;
+  .error-boundary__button {
+    width: 100%;
+    max-width: 300px;
   }
 }
 
-/* Reduced motion support */
+/* Print styles for accessibility */
+@media print {
+  .skip-links,
+  .error-boundary__actions {
+    display: none;
+  }
+  
+  .error-boundary__stack {
+    background: none;
+    border: 1px solid #000;
+  }
+}
+
+/* Animation preferences */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -78,522 +366,21 @@
   }
 }
 
-/* Large text support */
-@media (min-resolution: 192dpi) {
-  body {
-    font-size: 16px;
+/* High contrast preferences */
+@media (prefers-contrast: high) {
+  :root {
+    --primary-main: #000000;
+    --background-default: #ffffff;
+    --text-primary: #000000;
   }
 }
 
-/* Touch target sizes */
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Error states */
-.error-message {
-  color: #d32f2f;
-  font-size: 0.75rem;
-  margin-top: 4px;
-}
-
-.error-message[role="alert"] {
-  /* Screen readers will announce this immediately */
-}
-
-/* Loading states */
-.loading-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-
-.loading-indicator[aria-live] {
-  /* Screen readers will announce loading state changes */
-}
-
-/* Keyboard navigation indicators */
-.keyboard-focused {
-  outline: 2px solid #0066cc;
-  outline-offset: 2px;
-}
-
-/* High contrast borders */
-.high-contrast {
-  border: 1px solid currentColor;
-}
-
-.high-contrast .MuiButton-root {
-  border: 2px solid currentColor;
-}
-
-.high-contrast .MuiTextField-root .MuiOutlinedInput-root fieldset {
-  border-width: 2px;
-}
-
-/* Color blind friendly indicators */
-.status-indicator {
-  position: relative;
-}
-
-.status-indicator::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.status-indicator.success::before {
-  background-color: #2e7d32;
-}
-
-.status-indicator.warning::before {
-  background-color: #ed6c02;
-  border: 1px solid #000;
-}
-
-.status-indicator.error::before {
-  background-color: #d32f2f;
-  border: 1px solid #000;
-}
-
-.status-indicator.info::before {
-  background-color: #0288d1;
-}
-
-/* Accessible form styles */
-.form-field {
-  margin-bottom: 16px;
-}
-
-.form-field label {
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-
-.form-field input,
-.form-field select,
-.form-field textarea {
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-}
-
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus {
-  outline: 2px solid #0066cc;
-  outline-offset: 2px;
-  border-color: #0066cc;
-}
-
-.form-field.error input,
-.form-field.error select,
-.form-field.error textarea {
-  border-color: #d32f2f;
-}
-
-.form-field .help-text {
-  font-size: 0.75rem;
-  color: #666;
-  margin-top: 4px;
-}
-
-/* Accessible table styles */
-.accessible-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.accessible-table th,
-.accessible-table td {
-  border: 1px solid #ccc;
-  padding: 8px 12px;
-  text-align: left;
-}
-
-.accessible-table th {
-  background-color: #f5f5f5;
-  font-weight: 600;
-}
-
-.accessible-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.accessible-table tr:focus-within {
-  outline: 2px solid #0066cc;
-  outline-offset: -2px;
-}
-
-/* Accessible navigation */
-.nav-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.nav-list li {
-  margin: 0;
-}
-
-.nav-list a {
-  display: block;
-  padding: 12px 16px;
-  text-decoration: none;
-  color: inherit;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-}
-
-.nav-list a:focus {
-  outline: 2px solid #0066cc;
-  outline-offset: -2px;
-  background-color: rgba(0, 102, 204, 0.1);
-}
-
-.nav-list a[aria-current="page"] {
-  background-color: rgba(0, 102, 204, 0.2);
-  font-weight: 600;
-}
-
-/* Accessible modal/dialog */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1300;
-}
-
-.modal-content {
-  background-color: white;
-  border-radius: 8px;
-  padding: 24px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: auto;
-  position: relative;
-}
-
-.modal-content:focus {
-  outline: none;
-}
-
-/* Accessible tooltips */
-.tooltip {
-  position: absolute;
-  z-index: 1500;
-  background-color: rgba(0, 0, 0, 0.9);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  max-width: 200px;
-  word-wrap: break-word;
-}
-
-.tooltip[role="tooltip"] {
-  /* Ensure tooltip is properly announced */
-}
-
-/* Accessible progress indicators */
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background-color: #1976d2;
-  transition: width 0.3s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .progress-bar-fill {
-    transition: none;
-  }
-}
-
-/* Accessible status messages */
-.status-message {
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin: 8px 0;
-  border-left: 4px solid;
-}
-
-.status-message.info {
-  background-color: #e3f2fd;
-  border-color: #2196f3;
-  color: #0d47a1;
-}
-
-.status-message.success {
-  background-color: #e8f5e8;
-  border-color: #4caf50;
-  color: #1b5e20;
-}
-
-.status-message.warning {
-  background-color: #fff3e0;
-  border-color: #ff9800;
-  color: #e65100;
-}
-
-.status-message.error {
-  background-color: #ffebee;
-  border-color: #f44336;
-  color: #c62828;
-}
-
-/* Accessible data visualization */
-.chart-container {
-  position: relative;
-}
-
-.chart-container .sr-description {
-  /* Screen reader description for charts */
-}
-
-.chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.chart-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chart-legend-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  border: 1px solid #ccc;
-}
-
-/* Print styles for accessibility */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-only {
-    display: block !important;
-  }
-  
-  a[href]:after {
-    content: " (" attr(href) ")";
-  }
-  
-  .skip-links {
-    display: none;
-  }
-}
-
-/* Windows High Contrast Mode */
-@media screen and (-ms-high-contrast: active) {
-  .focus-visible {
-    outline: 2px solid windowText;
-  }
-  
-  .MuiButton-root {
-    border: 1px solid windowText;
-  }
-}
-
-/* Forced colors mode (Windows) */
-@media (forced-colors: active) {
-  .focus-visible {
-    outline: 2px solid highlight;
-  }
-  
-  .status-indicator::before {
-    border: 1px solid canvasText;
-  }
-}/*
- Enhanced accessibility features */
-
-/* High contrast mode */
-.high-contrast {
-  --primary-color: #000000;
-  --secondary-color: #ffffff;
-  --background-color: #ffffff;
-  --text-color: #000000;
-  --border-color: #000000;
-  --focus-color: #ff0000;
-  --link-color: #0000ff;
-  --visited-color: #800080;
-  --error-color: #ff0000;
-  --success-color: #008000;
-  --warning-color: #ff8c00;
-}
-
-.high-contrast * {
-  background-color: var(--background-color) !important;
-  color: var(--text-color) !important;
-  border-color: var(--border-color) !important;
-}
-
-.high-contrast .MuiButton-contained {
-  background-color: var(--text-color) !important;
-  color: var(--background-color) !important;
-}
-
-.high-contrast .MuiChip-filled {
-  background-color: var(--text-color) !important;
-  color: var(--background-color) !important;
-}
-
-.high-contrast a {
-  color: var(--link-color) !important;
-  text-decoration: underline !important;
-}
-
-.high-contrast a:visited {
-  color: var(--visited-color) !important;
-}
-
-/* Enhanced reduced motion */
-.reduced-motion .MuiCollapse-root {
-  transition: none !important;
-}
-
-.reduced-motion .MuiSlide-root {
-  transition: none !important;
-}
-
-/* Large text enhancements */
-.large-text .MuiButton-root {
-  font-size: 1.1em;
-  padding: 12px 24px;
-}
-
-.large-text .MuiTextField-root {
-  font-size: 1.1em;
-}
-
-/* Screen reader mode */
-.screen-reader-mode .MuiTooltip-tooltip {
-  display: none;
-}
-
-.screen-reader-mode [aria-hidden="true"] {
-  display: none !important;
-}
-
-/* Enhanced focus indicators */
-*:focus-visible {
-  outline: 3px solid #005fcc !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 0 0 1px #ffffff, 0 0 0 4px #005fcc !important;
-}
-
-.no-focus-indicators *:focus,
-.no-focus-indicators *:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Color blindness support filters */
-.protanopia {
-  filter: url('#protanopia-filter');
-}
-
-.deuteranopia {
-  filter: url('#deuteranopia-filter');
-}
-
-.tritanopia {
-  filter: url('#tritanopia-filter');
-}
-
-/* Keyboard navigation enhancements */
-.keyboard-navigation *:focus {
-  outline: 2px solid #005fcc;
-  outline-offset: 2px;
-}
-
-.keyboard-navigation .MuiButton-root:focus {
-  background-color: rgba(0, 95, 204, 0.1);
-}
-
-.keyboard-navigation .MuiListItem-button:focus {
-  background-color: rgba(0, 95, 204, 0.1);
-}
-
-/* High contrast focus indicators */
-.high-contrast .focus-visible,
-.high-contrast *:focus-visible {
-  outline: 3px solid var(--focus-color) !important;
-  outline-offset: 2px !important;
-  box-shadow: none !important;
-}
-
-/* High contrast interactive elements */
-.high-contrast .MuiButton-root:hover {
-  background-color: var(--text-color) !important;
-  color: var(--background-color) !important;
-}
-
-.high-contrast .MuiIconButton-root:hover {
-  background-color: rgba(0, 0, 0, 0.1) !important;
-}
-
-/* High contrast alert states */
-.high-contrast .MuiAlert-errorStandard {
-  background-color: var(--background-color) !important;
-  color: var(--error-color) !important;
-  border: 2px solid var(--error-color) !important;
-}
-
-.high-contrast .MuiAlert-warningStandard {
-  background-color: var(--background-color) !important;
-  color: var(--warning-color) !important;
-  border: 2px solid var(--warning-color) !important;
-}
-
-.high-contrast .MuiAlert-successStandard {
-  background-color: var(--background-color) !important;
-  color: var(--success-color) !important;
-  border: 2px solid var(--success-color) !important;
-}
-
-/* Enhanced form accessibility */
-.high-contrast .MuiInputLabel-root {
-  color: var(--text-color) !important;
-}
-
-.high-contrast .MuiTableCell-root {
-  border: 1px solid var(--border-color) !important;
-}
-
-/* Touch target improvements */
-@media (pointer: coarse) {
-  .MuiButton-root,
-  .MuiIconButton-root,
-  .MuiChip-clickable {
-    min-height: 44px;
-    min-width: 44px;
+/* Color scheme preferences */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-default: #121212;
+    --background-paper: #1e1e1e;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
   }
 }

@@ -37,11 +37,8 @@
     /* Additional options */
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

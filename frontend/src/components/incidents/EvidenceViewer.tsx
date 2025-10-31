@@ -88,8 +88,9 @@ interface EvidenceViewerProps {
   onDownload?: (evidence: Evidence) => void;
   onShare?: (evidence: Evidence) => void;
   onAnalyze?: (evidence: Evidence) => void;
-}int
-erface EvidenceListProps {
+}
+
+interface EvidenceListProps {
   evidence: Evidence[];
   selectedEvidence?: Evidence;
   onSelect: (evidence: Evidence) => void;

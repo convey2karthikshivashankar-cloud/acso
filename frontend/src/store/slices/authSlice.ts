@@ -110,6 +110,21 @@ const authSlice = createSlice({
         localStorage.setItem('acso-refresh-token', action.payload.refreshToken);
       }
     },
+    setCredentials: (state, action: PayloadAction<{ user: User; token: string; refreshToken?: string }>) => {
+      state.isAuthenticated = true;
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      if (action.payload.refreshToken) {
+        state.refreshToken = action.payload.refreshToken;
+      }
+      
+      // Update localStorage
+      localStorage.setItem('acso-auth-token', action.payload.token);
+      localStorage.setItem('acso-user', JSON.stringify(action.payload.user));
+      if (action.payload.refreshToken) {
+        localStorage.setItem('acso-refresh-token', action.payload.refreshToken);
+      }
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -164,6 +179,7 @@ export const {
   logout,
   updateUser,
   setTokens,
+  setCredentials,
   clearError,
 } = authSlice.actions;
 

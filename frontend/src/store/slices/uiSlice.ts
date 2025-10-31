@@ -1,5 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+interface PerformanceMetric {
+  id: string;
+  phase: 'mount' | 'update';
+  actualDuration: number;
+  baseDuration: number;
+  startTime: number;
+  commitTime: number;
+  interactions: Set<any>;
+  timestamp?: number;
+}
+
 interface UIState {
   theme: 'light' | 'dark' | 'auto';
   sidebarCollapsed: boolean;
@@ -20,6 +31,11 @@ interface UIState {
   fullscreen: boolean;
   language: string;
   timezone: string;
+  performance: {
+    metrics: PerformanceMetric[];
+    maxMetrics: number;
+    enabled: boolean;
+  };
 }
 
 const initialState: UIState = {
@@ -42,6 +58,11 @@ const initialState: UIState = {
   fullscreen: false,
   language: 'en',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  performance: {
+    metrics: [],
+    maxMetrics: 100,
+    enabled: process.env.NODE_ENV === 'development',
+  },
 };
 
 const uiSlice = createSlice({
@@ -118,6 +139,30 @@ const uiSlice = createSlice({
     setTimezone: (state, action: PayloadAction<string>) => {
       state.timezone = action.payload;
     },
+    addPerformanceMetric: (state, action: PayloadAction<PerformanceMetric>) => {
+      if (!state.performance.enabled) return;
+      
+      const metric = {
+        ...action.payload,
+        timestamp: Date.now(),
+      };
+      
+      state.performance.metrics.push(metric);
+      
+      // Keep only the last N metrics to prevent memory leaks
+      if (state.performance.metrics.length > state.performance.maxMetrics) {
+        state.performance.metrics = state.performance.metrics.slice(-state.performance.maxMetrics);
+      }
+    },
+    clearPerformanceMetrics: (state) => {
+      state.performance.metrics = [];
+    },
+    setPerformanceEnabled: (state, action: PayloadAction<boolean>) => {
+      state.performance.enabled = action.payload;
+      if (!action.payload) {
+        state.performance.metrics = [];
+      }
+    },
   },
 });
 
@@ -143,6 +188,9 @@ export const {
   setFullscreen,
   setLanguage,
   setTimezone,
+  addPerformanceMetric,
+  clearPerformanceMetrics,
+  setPerformanceEnabled,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;
@@ -161,3 +209,5 @@ export const selectSearch = (state: { ui: UIState }) => state.ui.search;
 export const selectFullscreen = (state: { ui: UIState }) => state.ui.fullscreen;
 export const selectLanguage = (state: { ui: UIState }) => state.ui.language;
 export const selectTimezone = (state: { ui: UIState }) => state.ui.timezone;
+export const selectPerformanceMetrics = (state: { ui: UIState }) => state.ui.performance.metrics;
+export const selectPerformanceEnabled = (state: { ui: UIState }) => state.ui.performance.enabled;

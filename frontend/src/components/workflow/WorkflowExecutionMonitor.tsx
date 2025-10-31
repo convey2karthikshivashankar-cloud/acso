@@ -14,13 +14,6 @@ import {
   Chip,
   LinearProgress,
   CircularProgress,
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
-  TimelineOppositeContent,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -181,23 +174,30 @@ const ExecutionTimeline: React.FC<ExecutionTimelineProps> = ({
   };
 
   return (
-    <Timeline>
+    <List>
       {execution.nodeExecutions
         .sort((a, b) => (a.startTime?.getTime() || 0) - (b.startTime?.getTime() || 0))
         .map((nodeExecution, index) => (
-          <TimelineItem key={nodeExecution.id}>
-            <TimelineOppositeContent sx={{ m: 'auto 0' }} variant="body2" color="text.secondary">
-              {nodeExecution.startTime?.toLocaleTimeString() || 'Pending'}
-            </TimelineOppositeContent>
-            
-            <TimelineSeparator>
-              <TimelineDot sx={{ bgcolor: getStatusColor(nodeExecution.status) }}>
+          <ListItem key={nodeExecution.id} sx={{ flexDirection: 'column', alignItems: 'stretch', py: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box sx={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: '50%', 
+                bgcolor: getStatusColor(nodeExecution.status),
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mr: 2
+              }}>
                 {getStatusIcon(nodeExecution.status)}
-              </TimelineDot>
-              {index < execution.nodeExecutions.length - 1 && <TimelineConnector />}
-            </TimelineSeparator>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                {nodeExecution.startTime?.toLocaleTimeString() || 'Pending'}
+              </Typography>
+            </Box>
             
-            <TimelineContent sx={{ py: '12px', px: 2 }}>
+            <Box sx={{ ml: 5 }}>
               <Card
                 sx={{
                   cursor: onNodeClick ? 'pointer' : 'default',
@@ -245,10 +245,10 @@ const ExecutionTimeline: React.FC<ExecutionTimelineProps> = ({
                   )}
                 </CardContent>
               </Card>
-            </TimelineContent>
-          </TimelineItem>
+            </Box>
+          </ListItem>
         ))}
-    </Timeline>
+    </List>
   );
 };
 

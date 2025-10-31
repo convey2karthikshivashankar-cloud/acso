@@ -26,7 +26,6 @@ import {
   RestoreFromTrash,
 } from '@mui/icons-material';
 import { DashboardLayoutEngine, DashboardTemplate } from './DashboardLayoutEngine';
-import { DashboardCustomizer, DashboardCustomization } from './DashboardCustomizer';
 import { DashboardThemeProvider, DashboardCustomizationProvider, useDashboardCustomization, createDefaultCustomization } from './DashboardThemeProvider';
 import { DashboardPresetBrowser } from './DashboardPresetBrowser';
 import { UserRole } from './RoleBasedDashboard';

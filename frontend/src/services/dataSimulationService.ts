@@ -1,645 +1,670 @@
-import { Agent, AgentConnection, AgentMetric } from '../components/agents';
-import { Incident } from '../components/incidents';
+import { Agent, AgentStatus } from '../types/api';
 
-export interface SimulationConfig {
+interface SimulationConfig {
   agentCount: number;
-  incidentFrequency: number; // incidents per hour
-  dataUpdateInterval: number; // milliseconds
+  incidentFrequency: number;
+  dataUpdateInterval: number;
   networkComplexity: 'simple' | 'moderate' | 'complex';
-  simulationDuration: number; // minutes, 0 for infinite
+  simulationDuration: number;
   realisticVariation: boolean;
-  enableAnomalies: boolean;
-  anomalyFrequency: number; // anomalies per hour
 }
 
-export interface FinancialData {
+interface SimulatedMetric {
   timestamp: Date;
-  totalCosts: number;
-  savings: number;
-  roi: number;
-  costBreakdown: {
-    infrastructure: number;
-    personnel: number;
-    licensing: number;
-    maintenance: number;
-  };
-  benefits: {
-    timesSaved: number;
-    incidentsAvoided: number;
-    efficiencyGains: number;
-  };
+  value: number;
+  trend: 'up' | 'down' | 'stable';
 }
 
-export interface NetworkTopologyData {
-  nodes: NetworkNode[];
-  connections: NetworkConnection[];
-  metrics: {
-    totalNodes: number;
-    activeConnections: number;
-    averageLatency: number;
-    throughput: number;
-  };
-}
-
-export interface NetworkNode {
+interface ThreatScenario {
   id: string;
-  type: 'agent' | 'service' | 'database' | 'external';
-  name: string;
-  status: 'active' | 'inactive' | 'warning' | 'error';
-  position: { x: number; y: number };
-  metrics: {
-    cpu: number;
-    memory: number;
-    network: number;
-  };
+  type: 'apt' | 'malware' | 'phishing' | 'ddos' | 'insider' | 'ransomware';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  indicators: string[];
+  affectedAssets: string[];
+  timeline: Array<{
+    timestamp: Date;
+    event: string;
+    details: string;
+  }>;
 }
 
-export interface NetworkConnection {
-  id: string;
-  source: string;
-  target: string;
-  type: 'data' | 'control' | 'monitoring';
-  status: 'active' | 'inactive' | 'congested';
-  metrics: {
-    bandwidth: number;
-    latency: number;
-    packetLoss: number;
-  };
+interface MarketTrend {
+  sector: string;
+  trend: 'bullish' | 'bearish' | 'neutral';
+  volatility: number;
+  confidence: number;
 }
 
 class DataSimulationService {
-  private config: SimulationConfig;
-  private isRunning: boolean = false;
+  private config: SimulationConfig = {
+    agentCount: 8,
+    incidentFrequency: 0.1,
+    dataUpdateInterval: 5000,
+    networkComplexity: 'moderate',
+    simulationDuration: 0, // 0 = infinite
+    realisticVariation: true,
+  };
+
   private intervals: Map<string, NodeJS.Timeout> = new Map();
-  private agents: Agent[] = [];
-  private incidents: Incident[] = [];
-  private financialHistory: FinancialData[] = [];
-  private networkTopology: NetworkTopologyData | null = null;
-  
-  // Event callbacks
-  private onAgentUpdate?: (agents: Agent[]) => void;
-  private onIncidentUpdate?: (incidents: Incident[]) => void;
-  private onFinancialUpdate?: (data: FinancialData) => void;
-  private onNetworkUpdate?: (topology: NetworkTopologyData) => void;
-  private onMetricsUpdate?: (metrics: AgentMetric[]) => void;
+  private simulatedData: Map<string, any> = new Map();
+  private isRunning = false;
 
-  constructor(config: Partial<SimulationConfig> = {}) {
-    this.config = {
-      agentCount: 6,
-      incidentFrequency: 2,
-      dataUpdateInterval: 5000,
-      networkComplexity: 'moderate',
-      simulationDuration: 0,
-      realisticVariation: true,
-      enableAnomalies: true,
-      anomalyFrequency: 0.5,
-      ...config,
-    };
-  }
-
-  // Configuration methods
-  updateConfig(newConfig: Partial<SimulationConfig>) {
-    this.config = { ...this.config, ...newConfig };
-    if (this.isRunning) {
-      this.restart();
+  constructor(config?: Partial<SimulationConfig>) {
+    if (config) {
+      this.config = { ...this.config, ...config };
     }
   }
 
-  getConfig(): SimulationConfig {
-    return { ...this.config };
-  }
-
-  // Event subscription methods
-  onAgentsUpdated(callback: (agents: Agent[]) => void) {
-    this.onAgentUpdate = callback;
-  }
-
-  onIncidentsUpdated(callback: (incidents: Incident[]) => void) {
-    this.onIncidentUpdate = callback;
-  }
-
-  onFinancialDataUpdated(callback: (data: FinancialData) => void) {
-    this.onFinancialUpdate = callback;
-  }
-
-  onNetworkTopologyUpdated(callback: (topology: NetworkTopologyData) => void) {
-    this.onNetworkUpdate = callback;
-  }
-
-  onMetricsUpdated(callback: (metrics: AgentMetric[]) => void) {
-    this.onMetricsUpdate = callback;
-  }
-
-  // Simulation control methods
-  start() {
+  // Start all simulations
+  startAllSimulations(): void {
     if (this.isRunning) return;
     
     this.isRunning = true;
-    this.initializeData();
-    this.startSimulationLoops();
-    
-    console.log('Data simulation started with config:', this.config);
+    this.startAgentMetricsSimulation();
+    this.startIncidentSimulation();
+    this.startFinancialDataSimulation();
+    this.startNetworkTopologySimulation();
+    this.startThreatScenarioSimulation();
+    this.startWorkflowSimulation();
+    this.startSystemMetricsSimulation();
   }
 
-  stop() {
-    if (!this.isRunning) return;
-    
-    this.isRunning = false;
-    this.intervals.forEach(interval => clearInterval(interval));
+  // Stop all simulations
+  stopAllSimulations(): void {
+    this.intervals.forEach((interval) => {
+      clearInterval(interval);
+    });
     this.intervals.clear();
-    
-    console.log('Data simulation stopped');
+    this.isRunning = false;
   }
 
-  restart() {
-    this.stop();
-    setTimeout(() => this.start(), 100);
-  }
-
-  // Data initialization
-  private initializeData() {
-    this.agents = this.generateInitialAgents();
-    this.incidents = this.generateInitialIncidents();
-    this.networkTopology = this.generateNetworkTopology();
-    this.financialHistory = this.generateFinancialHistory();
+  // Configure simulation parameters
+  configureSimulationParameters(params: Partial<SimulationConfig>): void {
+    this.config = { ...this.config, ...params };
     
-    // Trigger initial callbacks
-    this.onAgentUpdate?.(this.agents);
-    this.onIncidentUpdate?.(this.incidents);
-    this.onNetworkUpdate?.(this.networkTopology);
-    if (this.financialHistory.length > 0) {
-      this.onFinancialUpdate?.(this.financialHistory[this.financialHistory.length - 1]);
+    // Restart simulations with new config if running
+    if (this.isRunning) {
+      this.stopAllSimulations();
+      this.startAllSimulations();
     }
   }
 
-  // Simulation loops
-  private startSimulationLoops() {
-    // Agent metrics update
-    const agentInterval = setInterval(() => {
-      this.updateAgentMetrics();
-      this.onAgentUpdate?.(this.agents);
+  // Generate realistic agent metrics
+  startAgentMetricsSimulation(): void {
+    const intervalId = setInterval(() => {
+      const agents = this.generateAgentMetrics();
+      this.simulatedData.set('agents', agents);
       
-      const metrics = this.generateAgentMetrics();
-      this.onMetricsUpdate?.(metrics);
+      // Emit update event
+      this.emitDataUpdate('agents', agents);
     }, this.config.dataUpdateInterval);
-    this.intervals.set('agents', agentInterval);
 
-    // Incident simulation
-    const incidentInterval = setInterval(() => {
-      this.simulateIncidents();
-      this.onIncidentUpdate?.(this.incidents);
-    }, 60000 / this.config.incidentFrequency); // Convert frequency to interval
-    this.intervals.set('incidents', incidentInterval);
-
-    // Financial data update
-    const financialInterval = setInterval(() => {
-      const newData = this.generateFinancialData();
-      this.financialHistory.push(newData);
-      
-      // Keep only last 100 entries
-      if (this.financialHistory.length > 100) {
-        this.financialHistory = this.financialHistory.slice(-100);
-      }
-      
-      this.onFinancialUpdate?.(newData);
-    }, this.config.dataUpdateInterval * 2);
-    this.intervals.set('financial', financialInterval);
-
-    // Network topology update
-    const networkInterval = setInterval(() => {
-      this.updateNetworkTopology();
-      this.onNetworkUpdate?.(this.networkTopology!);
-    }, this.config.dataUpdateInterval * 3);
-    this.intervals.set('network', networkInterval);
-
-    // Auto-stop if duration is set
-    if (this.config.simulationDuration > 0) {
-      setTimeout(() => {
-        this.stop();
-      }, this.config.simulationDuration * 60 * 1000);
-    }
+    this.intervals.set('agentMetrics', intervalId);
   }
 
-  // Agent generation and updates
-  private generateInitialAgents(): Agent[] {
-    const agentTypes: Agent['type'][] = [
-      'supervisor',
-      'threat_hunter',
-      'incident_response',
-      'service_orchestration',
-      'financial_intelligence',
-    ];
+  // Generate incident data
+  startIncidentSimulation(): void {
+    const intervalId = setInterval(() => {
+      const shouldGenerateIncident = Math.random() < this.config.incidentFrequency;
+      
+      if (shouldGenerateIncident) {
+        const incident = this.generateIncident();
+        const existingIncidents = this.simulatedData.get('incidents') || [];
+        const updatedIncidents = [incident, ...existingIncidents].slice(0, 50); // Keep last 50
+        
+        this.simulatedData.set('incidents', updatedIncidents);
+        this.emitDataUpdate('incidents', updatedIncidents);
+      }
+    }, this.config.dataUpdateInterval * 2); // Less frequent than metrics
 
+    this.intervals.set('incidents', intervalId);
+  }
+
+  // Generate financial data
+  startFinancialDataSimulation(): void {
+    const intervalId = setInterval(() => {
+      const financialData = this.generateFinancialData();
+      this.simulatedData.set('financial', financialData);
+      this.emitDataUpdate('financial', financialData);
+    }, this.config.dataUpdateInterval * 6); // Even less frequent
+
+    this.intervals.set('financial', intervalId);
+  }
+
+  // Generate network topology changes
+  startNetworkTopologySimulation(): void {
+    const intervalId = setInterval(() => {
+      const topology = this.generateNetworkTopology();
+      this.simulatedData.set('topology', topology);
+      this.emitDataUpdate('topology', topology);
+    }, this.config.dataUpdateInterval * 4);
+
+    this.intervals.set('topology', intervalId);
+  }
+
+  // Generate realistic agent metrics
+  private generateAgentMetrics(): Agent[] {
     const agents: Agent[] = [];
-    
+    const baseTime = Date.now();
+
     for (let i = 0; i < this.config.agentCount; i++) {
-      const type = agentTypes[i % agentTypes.length];
+      const agentId = `agent-${i + 1}`;
+      const agentTypes = ['threat_hunter', 'incident_response', 'financial_intelligence', 'service_orchestration'];
+      const agentType = agentTypes[i % agentTypes.length];
+      
+      // Generate realistic metrics with trends
+      const cpuBase = 30 + Math.random() * 40;
+      const memoryBase = 40 + Math.random() * 35;
+      const networkBase = 10 + Math.random() * 20;
+      
+      // Add realistic variation
+      const cpuVariation = this.config.realisticVariation ? (Math.sin(baseTime / 60000) * 10) : 0;
+      const memoryVariation = this.config.realisticVariation ? (Math.cos(baseTime / 45000) * 8) : 0;
+      
       const agent: Agent = {
-        id: `agent-${i + 1}`,
-        name: `${type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ${Math.floor(i / agentTypes.length) + 1}`,
-        type,
-        status: this.randomChoice(['online', 'online', 'online', 'warning', 'offline']),
+        id: agentId,
+        name: `${agentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ${i + 1}`,
+        type: agentType as any,
+        status: this.getRandomStatus(),
         health: {
-          score: this.randomBetween(70, 100),
-          cpu: this.randomBetween(10, 80),
-          memory: this.randomBetween(20, 90),
-          disk: this.randomBetween(30, 70),
-          network: this.randomBetween(5, 60),
+          score: Math.max(60, Math.min(100, 85 + (Math.random() - 0.5) * 20)),
+          cpu: Math.max(0, Math.min(100, cpuBase + cpuVariation + (Math.random() - 0.5) * 10)),
+          memory: Math.max(0, Math.min(100, memoryBase + memoryVariation + (Math.random() - 0.5) * 8)),
+          disk: Math.max(0, Math.min(100, 45 + (Math.random() - 0.5) * 15)),
+          network: Math.max(0, Math.min(100, networkBase + (Math.random() - 0.5) * 5)),
         },
         performance: {
-          tasksCompleted: this.randomBetween(100, 2000),
-          averageResponseTime: this.randomBetween(50, 500),
-          successRate: this.randomBetween(85, 99.5),
-          uptime: this.randomBetween(86400, 86400 * 30), // 1-30 days
+          tasksCompleted: Math.floor(500 + Math.random() * 1000),
+          averageResponseTime: Math.floor(100 + Math.random() * 300),
+          successRate: Math.max(85, Math.min(100, 95 + (Math.random() - 0.5) * 10)),
+          uptime: Math.floor(86400 * (1 + Math.random() * 30)), // 1-30 days
         },
-        lastHeartbeat: new Date(Date.now() - this.randomBetween(1000, 60000)),
-        version: `2.${this.randomBetween(0, 2)}.${this.randomBetween(0, 10)}`,
-        location: this.randomChoice(['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1']),
-        tags: this.generateAgentTags(type),
+        lastHeartbeat: new Date(baseTime - Math.random() * 60000), // Within last minute
+        version: `2.${Math.floor(Math.random() * 3)}.${Math.floor(Math.random() * 10)}`,
+        location: this.getRandomLocation(),
+        tags: this.getRandomTags(agentType),
         metadata: {
-          instanceType: this.randomChoice(['t3.medium', 'm5.large', 'c5.xlarge']),
-          region: this.randomChoice(['us-east-1', 'us-west-2', 'eu-west-1']),
-          availabilityZone: 'a',
+          instanceType: this.getRandomInstanceType(),
+          region: this.getRandomRegion(),
+          availabilityZone: this.getRandomAZ(),
         },
       };
+
       agents.push(agent);
     }
 
     return agents;
   }
 
-  private updateAgentMetrics() {
-    this.agents.forEach(agent => {
-      if (agent.status === 'maintenance') return;
-
-      // Simulate realistic metric changes
-      const variation = this.config.realisticVariation ? this.randomBetween(-5, 5) : 0;
-      
-      agent.health.cpu = Math.max(0, Math.min(100, agent.health.cpu + variation));
-      agent.health.memory = Math.max(0, Math.min(100, agent.health.memory + variation));
-      agent.health.network = Math.max(0, Math.min(100, agent.health.network + variation));
-      
-      // Update health score based on metrics
-      agent.health.score = Math.round(
-        (100 - agent.health.cpu * 0.3 - agent.health.memory * 0.4 - agent.health.network * 0.3)
-      );
-
-      // Update performance metrics
-      agent.performance.tasksCompleted += this.randomBetween(0, 5);
-      agent.performance.averageResponseTime += this.randomBetween(-10, 10);
-      agent.performance.averageResponseTime = Math.max(50, agent.performance.averageResponseTime);
-
-      // Update status based on health
-      if (agent.health.score < 60) {
-        agent.status = 'error';
-      } else if (agent.health.score < 80) {
-        agent.status = 'warning';
-      } else {
-        agent.status = 'online';
-      }
-
-      agent.lastHeartbeat = new Date();
-    });
-  }
-
-  private generateAgentMetrics(): AgentMetric[] {
-    const metrics: AgentMetric[] = [];
-    const now = new Date();
-
-    this.agents.forEach(agent => {
-      if (agent.status === 'maintenance') return;
-
-      metrics.push({
-        timestamp: now,
-        agentId: agent.id,
-        agentName: agent.name,
-        cpu: agent.health.cpu,
-        memory: agent.health.memory,
-        disk: agent.health.disk,
-        network: agent.health.network,
-        tasksCompleted: this.randomBetween(0, 10),
-        tasksActive: this.randomBetween(0, 5),
-        responseTime: agent.performance.averageResponseTime,
-        errorRate: 100 - agent.performance.successRate,
-        uptime: agent.performance.uptime,
-      });
-    });
-
-    return metrics;
-  }
-
-  // Incident simulation
-  private generateInitialIncidents(): Incident[] {
-    const incidents: Incident[] = [];
+  // Generate incident data
+  private generateIncident() {
     const incidentTypes = [
+      'Suspicious Network Activity',
       'Malware Detection',
       'Unauthorized Access Attempt',
-      'Network Anomaly',
       'Data Exfiltration Alert',
-      'System Performance Degradation',
+      'System Anomaly',
+      'Security Policy Violation',
     ];
 
-    for (let i = 0; i < 3; i++) {
-      const incident: Incident = {
-        id: `incident-${Date.now()}-${i}`,
-        title: incidentTypes[i % incidentTypes.length],
-        severity: this.randomChoice(['low', 'medium', 'high', 'critical']),
-        status: this.randomChoice(['open', 'investigating', 'resolved']),
-        assignee: {
-          id: `user-${i + 1}`,
-          name: `Analyst ${i + 1}`,
-          email: `analyst${i + 1}@acso.com`,
-          role: 'security_analyst',
-        },
-        timeline: [],
-        evidence: [],
-        collaborators: [],
-        tags: ['automated', 'ai-detected'],
-        createdAt: new Date(Date.now() - this.randomBetween(3600000, 86400000)),
-        updatedAt: new Date(),
-      };
-      incidents.push(incident);
-    }
-
-    return incidents;
-  }
-
-  private simulateIncidents() {
-    // Randomly create new incidents
-    if (Math.random() < 0.3) {
-      const newIncident = this.generateRandomIncident();
-      this.incidents.unshift(newIncident);
-      
-      // Keep only last 20 incidents
-      if (this.incidents.length > 20) {
-        this.incidents = this.incidents.slice(0, 20);
-      }
-    }
-
-    // Update existing incidents
-    this.incidents.forEach(incident => {
-      if (incident.status === 'open' && Math.random() < 0.2) {
-        incident.status = 'investigating';
-        incident.updatedAt = new Date();
-      } else if (incident.status === 'investigating' && Math.random() < 0.1) {
-        incident.status = 'resolved';
-        incident.updatedAt = new Date();
-      }
-    });
-  }
-
-  private generateRandomIncident(): Incident {
-    const types = [
-      'Suspicious Network Activity',
-      'Failed Login Attempts',
-      'Malware Signature Match',
-      'Unusual Data Access Pattern',
-      'System Resource Exhaustion',
-      'Certificate Expiration Warning',
-      'Unauthorized API Access',
-    ];
+    const severities = ['low', 'medium', 'high', 'critical'];
+    const sources = ['Threat Hunter', 'Network Monitor', 'File Scanner', 'Access Control'];
 
     return {
-      id: `incident-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      title: this.randomChoice(types),
-      severity: this.randomChoice(['low', 'medium', 'high', 'critical']),
+      id: `incident-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: incidentTypes[Math.floor(Math.random() * incidentTypes.length)],
+      severity: severities[Math.floor(Math.random() * severities.length)],
+      source: sources[Math.floor(Math.random() * sources.length)],
+      timestamp: new Date(),
       status: 'open',
-      assignee: {
-        id: `user-${this.randomBetween(1, 5)}`,
-        name: `Analyst ${this.randomBetween(1, 5)}`,
-        email: `analyst@acso.com`,
-        role: 'security_analyst',
-      },
-      timeline: [],
-      evidence: [],
-      collaborators: [],
-      tags: ['automated', 'real-time'],
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      description: 'Automated incident generated for demonstration purposes',
+      affectedSystems: Math.floor(1 + Math.random() * 5),
     };
   }
 
-  // Financial data simulation
-  private generateFinancialHistory(): FinancialData[] {
-    const history: FinancialData[] = [];
-    const now = Date.now();
+  // Generate financial data
+  private generateFinancialData() {
+    const baseTime = Date.now();
+    const monthlyTrend = Math.sin(baseTime / (30 * 24 * 60 * 60 * 1000)) * 0.1;
     
-    for (let i = 30; i >= 0; i--) {
-      const timestamp = new Date(now - i * 24 * 60 * 60 * 1000);
-      history.push(this.generateFinancialDataForDate(timestamp));
-    }
-    
-    return history;
-  }
-
-  private generateFinancialData(): FinancialData {
-    return this.generateFinancialDataForDate(new Date());
-  }
-
-  private generateFinancialDataForDate(timestamp: Date): FinancialData {
-    const baseCosts = 50000;
-    const variation = this.config.realisticVariation ? this.randomBetween(-5000, 5000) : 0;
-    
-    const infrastructure = baseCosts * 0.4 + variation;
-    const personnel = baseCosts * 0.35;
-    const licensing = baseCosts * 0.15;
-    const maintenance = baseCosts * 0.1;
-    
-    const totalCosts = infrastructure + personnel + licensing + maintenance;
-    const savings = this.randomBetween(15000, 25000);
-    const roi = ((savings - totalCosts) / totalCosts) * 100;
-
     return {
-      timestamp,
-      totalCosts,
-      savings,
-      roi,
-      costBreakdown: {
-        infrastructure,
-        personnel,
-        licensing,
-        maintenance,
+      totalCosts: {
+        current: Math.floor(50000 + monthlyTrend * 10000 + (Math.random() - 0.5) * 5000),
+        previous: Math.floor(48000 + (Math.random() - 0.5) * 3000),
+        trend: monthlyTrend > 0 ? 'up' : 'down',
       },
-      benefits: {
-        timesSaved: this.randomBetween(100, 200),
-        incidentsAvoided: this.randomBetween(5, 15),
-        efficiencyGains: this.randomBetween(20, 40),
+      roi: {
+        current: Math.max(15, Math.min(35, 25 + monthlyTrend * 5 + (Math.random() - 0.5) * 3)),
+        target: 30,
+        trend: monthlyTrend > 0 ? 'up' : 'down',
       },
+      savings: {
+        automated: Math.floor(15000 + (Math.random() - 0.5) * 3000),
+        efficiency: Math.floor(8000 + (Math.random() - 0.5) * 2000),
+        prevention: Math.floor(25000 + (Math.random() - 0.5) * 5000),
+      },
+      timestamp: new Date(),
     };
   }
 
-  // Network topology simulation
-  private generateNetworkTopology(): NetworkTopologyData {
-    const nodes: NetworkNode[] = [];
-    const connections: NetworkConnection[] = [];
+  // Generate network topology
+  private generateNetworkTopology() {
+    const nodeCount = this.config.networkComplexity === 'simple' ? 5 : 
+                     this.config.networkComplexity === 'moderate' ? 8 : 12;
+    
+    const nodes = [];
+    const connections = [];
 
-    // Add agent nodes
-    this.agents.forEach((agent, index) => {
+    // Generate nodes
+    for (let i = 0; i < nodeCount; i++) {
       nodes.push({
-        id: agent.id,
-        type: 'agent',
-        name: agent.name,
-        status: agent.status,
-        position: {
-          x: 100 + (index % 3) * 200,
-          y: 100 + Math.floor(index / 3) * 150,
-        },
-        metrics: {
-          cpu: agent.health.cpu,
-          memory: agent.health.memory,
-          network: agent.health.network,
-        },
+        id: `node-${i}`,
+        type: i === 0 ? 'supervisor' : ['agent', 'service', 'database'][Math.floor(Math.random() * 3)],
+        status: Math.random() > 0.1 ? 'active' : 'inactive',
+        load: Math.random() * 100,
+        connections: Math.floor(Math.random() * 5) + 1,
       });
-    });
-
-    // Add service nodes
-    const services = ['Database', 'API Gateway', 'Message Queue', 'Log Aggregator'];
-    services.forEach((service, index) => {
-      nodes.push({
-        id: `service-${index}`,
-        type: 'service',
-        name: service,
-        status: this.randomChoice(['active', 'active', 'warning']),
-        position: {
-          x: 400 + index * 150,
-          y: 300,
-        },
-        metrics: {
-          cpu: this.randomBetween(20, 80),
-          memory: this.randomBetween(30, 90),
-          network: this.randomBetween(10, 70),
-        },
-      });
-    });
+    }
 
     // Generate connections
-    nodes.forEach(node => {
-      if (node.type === 'agent') {
-        // Connect agents to services
-        const serviceConnections = this.randomBetween(1, 3);
-        for (let i = 0; i < serviceConnections; i++) {
-          const targetService = nodes.find(n => n.type === 'service' && Math.random() < 0.5);
-          if (targetService) {
-            connections.push({
-              id: `conn-${node.id}-${targetService.id}`,
-              source: node.id,
-              target: targetService.id,
-              type: 'data',
-              status: this.randomChoice(['active', 'active', 'congested']),
-              metrics: {
-                bandwidth: this.randomBetween(10, 100),
-                latency: this.randomBetween(5, 50),
-                packetLoss: this.randomBetween(0, 2),
-              },
-            });
-          }
-        }
+    for (let i = 1; i < nodeCount; i++) {
+      connections.push({
+        source: 'node-0', // Supervisor connects to all
+        target: `node-${i}`,
+        strength: Math.random() * 100,
+        latency: Math.floor(Math.random() * 50) + 10,
+      });
+    }
+
+    // Add some inter-node connections
+    for (let i = 0; i < Math.floor(nodeCount / 2); i++) {
+      const source = Math.floor(Math.random() * nodeCount);
+      const target = Math.floor(Math.random() * nodeCount);
+      if (source !== target) {
+        connections.push({
+          source: `node-${source}`,
+          target: `node-${target}`,
+          strength: Math.random() * 80,
+          latency: Math.floor(Math.random() * 30) + 5,
+        });
       }
-    });
+    }
 
-    return {
-      nodes,
-      connections,
-      metrics: {
-        totalNodes: nodes.length,
-        activeConnections: connections.filter(c => c.status === 'active').length,
-        averageLatency: connections.reduce((sum, c) => sum + c.metrics.latency, 0) / connections.length,
-        throughput: connections.reduce((sum, c) => sum + c.metrics.bandwidth, 0),
-      },
-    };
+    return { nodes, connections, timestamp: new Date() };
   }
 
-  private updateNetworkTopology() {
-    if (!this.networkTopology) return;
-
-    // Update node metrics
-    this.networkTopology.nodes.forEach(node => {
-      if (node.type === 'agent') {
-        const agent = this.agents.find(a => a.id === node.id);
-        if (agent) {
-          node.status = agent.status;
-          node.metrics = {
-            cpu: agent.health.cpu,
-            memory: agent.health.memory,
-            network: agent.health.network,
-          };
-        }
-      } else {
-        // Update service metrics
-        const variation = this.randomBetween(-5, 5);
-        node.metrics.cpu = Math.max(0, Math.min(100, node.metrics.cpu + variation));
-        node.metrics.memory = Math.max(0, Math.min(100, node.metrics.memory + variation));
-        node.metrics.network = Math.max(0, Math.min(100, node.metrics.network + variation));
+  // Generate threat scenarios
+  startThreatScenarioSimulation(): void {
+    const intervalId = setInterval(() => {
+      const shouldGenerateScenario = Math.random() < 0.05; // 5% chance every interval
+      
+      if (shouldGenerateScenario) {
+        const scenario = this.generateThreatScenario();
+        const existingScenarios = this.simulatedData.get('threatScenarios') || [];
+        const updatedScenarios = [scenario, ...existingScenarios].slice(0, 20);
+        
+        this.simulatedData.set('threatScenarios', updatedScenarios);
+        this.emitDataUpdate('threatScenarios', updatedScenarios);
       }
-    });
+    }, this.config.dataUpdateInterval * 3);
 
-    // Update connection metrics
-    this.networkTopology.connections.forEach(connection => {
-      const variation = this.randomBetween(-2, 2);
-      connection.metrics.latency = Math.max(1, connection.metrics.latency + variation);
-      connection.metrics.bandwidth = Math.max(1, connection.metrics.bandwidth + variation);
-      connection.metrics.packetLoss = Math.max(0, Math.min(5, connection.metrics.packetLoss + variation * 0.1));
-    });
-
-    // Update overall metrics
-    this.networkTopology.metrics = {
-      totalNodes: this.networkTopology.nodes.length,
-      activeConnections: this.networkTopology.connections.filter(c => c.status === 'active').length,
-      averageLatency: this.networkTopology.connections.reduce((sum, c) => sum + c.metrics.latency, 0) / this.networkTopology.connections.length,
-      throughput: this.networkTopology.connections.reduce((sum, c) => sum + c.metrics.bandwidth, 0),
-    };
+    this.intervals.set('threatScenarios', intervalId);
   }
 
-  // Utility methods
-  private randomBetween(min: number, max: number): number {
-    return Math.random() * (max - min) + min;
+  // Generate workflow data
+  startWorkflowSimulation(): void {
+    const intervalId = setInterval(() => {
+      const workflows = this.generateWorkflowData();
+      this.simulatedData.set('workflows', workflows);
+      this.emitDataUpdate('workflows', workflows);
+    }, this.config.dataUpdateInterval * 2);
+
+    this.intervals.set('workflows', intervalId);
   }
 
-  private randomChoice<T>(array: T[]): T {
-    return array[Math.floor(Math.random() * array.length)];
+  // Generate system metrics
+  startSystemMetricsSimulation(): void {
+    const intervalId = setInterval(() => {
+      const metrics = this.generateSystemMetrics();
+      this.simulatedData.set('systemMetrics', metrics);
+      this.emitDataUpdate('systemMetrics', metrics);
+    }, this.config.dataUpdateInterval);
+
+    this.intervals.set('systemMetrics', intervalId);
   }
 
-  private generateAgentTags(type: Agent['type']): string[] {
-    const baseTags = ['automated', 'ai-powered'];
-    const typeTags: Record<Agent['type'], string[]> = {
-      supervisor: ['coordinator', 'primary'],
-      threat_hunter: ['security', 'ml-enabled'],
-      incident_response: ['response', 'automation'],
-      service_orchestration: ['orchestration', 'workflow'],
-      financial_intelligence: ['financial', 'analytics'],
-    };
+  // Generate threat scenario
+  private generateThreatScenario(): ThreatScenario {
+    const threatTypes: ThreatScenario['type'][] = ['apt', 'malware', 'phishing', 'ddos', 'insider', 'ransomware'];
+    const severities: ThreatScenario['severity'][] = ['low', 'medium', 'high', 'critical'];
     
-    return [...baseTags, ...typeTags[type]];
-  }
-
-  // Public data access methods
-  getCurrentAgents(): Agent[] {
-    return [...this.agents];
-  }
-
-  getCurrentIncidents(): Incident[] {
-    return [...this.incidents];
-  }
-
-  getFinancialHistory(): FinancialData[] {
-    return [...this.financialHistory];
-  }
-
-  getCurrentNetworkTopology(): NetworkTopologyData | null {
-    return this.networkTopology ? { ...this.networkTopology } : null;
-  }
-
-  getSimulationStatus() {
-    return {
-      isRunning: this.isRunning,
-      config: this.config,
-      dataPoints: {
-        agents: this.agents.length,
-        incidents: this.incidents.length,
-        financialHistory: this.financialHistory.length,
-        networkNodes: this.networkTopology?.nodes.length || 0,
+    const type = threatTypes[Math.floor(Math.random() * threatTypes.length)];
+    const severity = severities[Math.floor(Math.random() * severities.length)];
+    
+    const scenarios = {
+      apt: {
+        description: 'Advanced Persistent Threat detected with lateral movement patterns',
+        indicators: ['Unusual network traffic', 'Privilege escalation attempts', 'Data staging activities'],
+      },
+      malware: {
+        description: 'Malicious software detected on endpoint systems',
+        indicators: ['Suspicious file execution', 'Registry modifications', 'Network callbacks'],
+      },
+      phishing: {
+        description: 'Phishing campaign targeting user credentials',
+        indicators: ['Suspicious email attachments', 'Credential harvesting attempts', 'Domain spoofing'],
+      },
+      ddos: {
+        description: 'Distributed Denial of Service attack in progress',
+        indicators: ['Traffic volume spike', 'Connection exhaustion', 'Service degradation'],
+      },
+      insider: {
+        description: 'Insider threat activity detected',
+        indicators: ['Unusual access patterns', 'Data exfiltration attempts', 'Policy violations'],
+      },
+      ransomware: {
+        description: 'Ransomware encryption activity detected',
+        indicators: ['File encryption patterns', 'Ransom note deployment', 'System lockdown'],
       },
     };
+
+    const scenario = scenarios[type];
+    const affectedAssets = this.generateAffectedAssets();
+    const timeline = this.generateThreatTimeline();
+
+    return {
+      id: `threat-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type,
+      severity,
+      description: scenario.description,
+      indicators: scenario.indicators,
+      affectedAssets,
+      timeline,
+    };
+  }
+
+  // Generate workflow data
+  private generateWorkflowData() {
+    const workflows = [];
+    const workflowTypes = [
+      'Incident Response',
+      'Patch Deployment',
+      'Security Scan',
+      'Backup Verification',
+      'Compliance Check',
+      'Performance Optimization',
+    ];
+
+    for (let i = 0; i < 5; i++) {
+      const type = workflowTypes[Math.floor(Math.random() * workflowTypes.length)];
+      const status = this.getRandomWorkflowStatus();
+      const progress = status === 'completed' ? 100 : 
+                     status === 'failed' ? Math.floor(Math.random() * 80) :
+                     Math.floor(Math.random() * 90) + 10;
+
+      workflows.push({
+        id: `workflow-${i + 1}`,
+        name: `${type} - ${new Date().toLocaleDateString()}`,
+        type,
+        status,
+        progress,
+        startTime: new Date(Date.now() - Math.random() * 3600000), // Within last hour
+        estimatedCompletion: new Date(Date.now() + Math.random() * 1800000), // Next 30 min
+        steps: this.generateWorkflowSteps(type),
+        assignedAgent: `agent-${Math.floor(Math.random() * this.config.agentCount) + 1}`,
+      });
+    }
+
+    return workflows;
+  }
+
+  // Generate system metrics
+  private generateSystemMetrics() {
+    const baseTime = Date.now();
+    const hourlyPattern = Math.sin((baseTime % (24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000) * 2 * Math.PI);
+    
+    return {
+      cpu: {
+        current: Math.max(10, Math.min(90, 45 + hourlyPattern * 15 + (Math.random() - 0.5) * 10)),
+        average: 42,
+        peak: 78,
+        trend: hourlyPattern > 0 ? 'up' : 'down',
+      },
+      memory: {
+        current: Math.max(20, Math.min(85, 55 + hourlyPattern * 10 + (Math.random() - 0.5) * 8)),
+        average: 52,
+        peak: 71,
+        trend: hourlyPattern > 0.2 ? 'up' : hourlyPattern < -0.2 ? 'down' : 'stable',
+      },
+      network: {
+        inbound: Math.max(0, 100 + hourlyPattern * 50 + (Math.random() - 0.5) * 30), // Mbps
+        outbound: Math.max(0, 80 + hourlyPattern * 40 + (Math.random() - 0.5) * 25),
+        latency: Math.max(1, 15 + (Math.random() - 0.5) * 10), // ms
+        packetLoss: Math.max(0, Math.min(5, 0.1 + Math.random() * 0.5)), // %
+      },
+      storage: {
+        used: Math.max(30, Math.min(90, 65 + (Math.random() - 0.5) * 5)),
+        available: 2048, // GB
+        iops: Math.floor(1000 + Math.random() * 500),
+        throughput: Math.floor(100 + Math.random() * 200), // MB/s
+      },
+      agents: {
+        total: this.config.agentCount,
+        online: Math.floor(this.config.agentCount * (0.85 + Math.random() * 0.1)),
+        busy: Math.floor(this.config.agentCount * (0.3 + Math.random() * 0.2)),
+        errors: Math.floor(Math.random() * 2),
+      },
+      incidents: {
+        open: Math.floor(Math.random() * 8) + 2,
+        resolved: Math.floor(Math.random() * 15) + 5,
+        critical: Math.floor(Math.random() * 3),
+      },
+      timestamp: new Date(),
+    };
+  }
+
+  private generateAffectedAssets(): string[] {
+    const assets = [
+      'web-server-01', 'db-server-02', 'file-server-03', 'mail-server-01',
+      'workstation-101', 'workstation-102', 'firewall-01', 'router-01',
+      'switch-01', 'backup-server-01', 'monitoring-server-01', 'dns-server-01'
+    ];
+    
+    const count = Math.floor(Math.random() * 4) + 1;
+    const selected = [];
+    
+    for (let i = 0; i < count; i++) {
+      const asset = assets[Math.floor(Math.random() * assets.length)];
+      if (!selected.includes(asset)) {
+        selected.push(asset);
+      }
+    }
+    
+    return selected;
+  }
+
+  private generateThreatTimeline() {
+    const events = [
+      'Initial detection',
+      'Alert triggered',
+      'Investigation started',
+      'Containment initiated',
+      'Evidence collected',
+      'Threat neutralized',
+    ];
+    
+    const timeline = [];
+    const baseTime = Date.now() - (Math.random() * 3600000); // Within last hour
+    
+    for (let i = 0; i < Math.min(events.length, Math.floor(Math.random() * 4) + 2); i++) {
+      timeline.push({
+        timestamp: new Date(baseTime + i * (Math.random() * 600000)), // 10 min intervals
+        event: events[i],
+        details: `Automated ${events[i].toLowerCase()} process executed`,
+      });
+    }
+    
+    return timeline;
+  }
+
+  private getRandomWorkflowStatus() {
+    const statuses = ['running', 'completed', 'failed', 'paused', 'pending'];
+    const weights = [0.3, 0.4, 0.1, 0.1, 0.1];
+    
+    const random = Math.random();
+    let cumulative = 0;
+    
+    for (let i = 0; i < statuses.length; i++) {
+      cumulative += weights[i];
+      if (random < cumulative) {
+        return statuses[i];
+      }
+    }
+    
+    return 'running';
+  }
+
+  private generateWorkflowSteps(workflowType: string) {
+    const stepTemplates = {
+      'Incident Response': [
+        'Detect and analyze threat',
+        'Contain affected systems',
+        'Eradicate threat',
+        'Recover systems',
+        'Document lessons learned',
+      ],
+      'Patch Deployment': [
+        'Download patches',
+        'Test in staging',
+        'Schedule deployment',
+        'Deploy to production',
+        'Verify installation',
+      ],
+      'Security Scan': [
+        'Initialize scan',
+        'Vulnerability assessment',
+        'Generate report',
+        'Prioritize findings',
+        'Create remediation plan',
+      ],
+      'Backup Verification': [
+        'Check backup integrity',
+        'Verify data consistency',
+        'Test restore process',
+        'Update backup logs',
+        'Generate status report',
+      ],
+      'Compliance Check': [
+        'Gather compliance data',
+        'Run compliance tests',
+        'Generate compliance report',
+        'Identify gaps',
+        'Create remediation plan',
+      ],
+      'Performance Optimization': [
+        'Analyze performance metrics',
+        'Identify bottlenecks',
+        'Implement optimizations',
+        'Test improvements',
+        'Monitor results',
+      ],
+    };
+
+    const steps = stepTemplates[workflowType as keyof typeof stepTemplates] || stepTemplates['Incident Response'];
+    
+    return steps.map((step, index) => ({
+      id: index + 1,
+      name: step,
+      status: index < Math.floor(Math.random() * steps.length) ? 'completed' : 'pending',
+      duration: Math.floor(Math.random() * 300) + 60, // 1-5 minutes
+    }));
+  }
+
+  // Helper methods
+  private getRandomStatus(): AgentStatus {
+    const statuses: AgentStatus[] = ['online', 'offline', 'warning', 'error', 'maintenance'];
+    const weights = [0.7, 0.05, 0.15, 0.05, 0.05]; // Mostly online
+    
+    const random = Math.random();
+    let cumulative = 0;
+    
+    for (let i = 0; i < statuses.length; i++) {
+      cumulative += weights[i];
+      if (random < cumulative) {
+        return statuses[i];
+      }
+    }
+    
+    return 'online';
+  }
+
+  private getRandomLocation() {
+    const locations = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1', 'us-central-1'];
+    return locations[Math.floor(Math.random() * locations.length)];
+  }
+
+  private getRandomTags(agentType: string) {
+    const baseTags = [agentType.replace('_', '-')];
+    const additionalTags = ['production', 'monitoring', 'security', 'automated', 'ml-enabled'];
+    
+    const numAdditional = Math.floor(Math.random() * 3) + 1;
+    const selectedTags = [...baseTags];
+    
+    for (let i = 0; i < numAdditional; i++) {
+      const tag = additionalTags[Math.floor(Math.random() * additionalTags.length)];
+      if (!selectedTags.includes(tag)) {
+        selectedTags.push(tag);
+      }
+    }
+    
+    return selectedTags;
+  }
+
+  private getRandomInstanceType() {
+    const types = ['t3.micro', 't3.small', 't3.medium', 'm5.large', 'c5.large', 'c5.xlarge'];
+    return types[Math.floor(Math.random() * types.length)];
+  }
+
+  private getRandomRegion() {
+    const regions = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1'];
+    return regions[Math.floor(Math.random() * regions.length)];
+  }
+
+  private getRandomAZ() {
+    const azs = ['a', 'b', 'c'];
+    return azs[Math.floor(Math.random() * azs.length)];
+  }
+
+  // Event emission for real-time updates
+  private emitDataUpdate(type: string, data: any) {
+    // In a real implementation, this would emit WebSocket events
+    // For now, we'll use custom events
+    const event = new CustomEvent('dataSimulationUpdate', {
+      detail: { type, data, timestamp: new Date() }
+    });
+    window.dispatchEvent(event);
+  }
+
+  // Public methods to get current data
+  getSimulatedData(type: string) {
+    return this.simulatedData.get(type);
+  }
+
+  getAllSimulatedData() {
+    const result: Record<string, any> = {};
+    this.simulatedData.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  }
+
+  isSimulationRunning() {
+    return this.isRunning;
+  }
+
+  getConfig() {
+    return { ...this.config };
   }
 }
 

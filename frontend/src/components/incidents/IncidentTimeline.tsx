@@ -72,8 +72,7 @@ export interface TimelineEvent {
     name: string;
     id: string;
   };
-}  evid
-ence?: {
+  evidence?: {
     type: 'log' | 'file' | 'screenshot' | 'network' | 'memory';
     name: string;
     size?: number;

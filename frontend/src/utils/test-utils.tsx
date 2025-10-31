@@ -172,7 +172,7 @@ export const mockUnauthenticatedState = {
 };
 
 // Helper function to create mock API responses
-export const createMockApiResponse = <T>(data: T) => ({
+export const createMockApiResponse = <T,>(data: T) => ({
   data,
   success: true,
   message: 'Success',

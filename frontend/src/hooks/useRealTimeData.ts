@@ -91,7 +91,9 @@ export const useRealTimeSubscription = <T = any>(
   deps: any[] = []
 ) => {
   useEffect(() => {
-    const unsubscribe = websocketService.subscribe(event, callback);
+    const unsubscribe = websocketService.onMessage(event, (message) => {
+      callback(message.data as T);
+    });
     return unsubscribe;
   }, [event, ...deps]);
 };

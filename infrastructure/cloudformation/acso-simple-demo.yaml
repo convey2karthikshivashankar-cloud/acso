@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ACSO Demo Infrastructure - Simple Working Version'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: demo
+
+Resources:
+  # S3 Bucket for frontend hosting
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'acso-demo-${AWS::AccountId}-${AWS::Region}'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # S3 Bucket Policy for public read access
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub '${FrontendBucket}/*'
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          ForwardedValues:
+            QueryString: false
+        Enabled: true
+        DefaultRootObject: index.html
+
+Outputs:
+  FrontendUrl:
+    Description: CloudFront distribution URL
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontendUrl'
+  
+  S3BucketName:
+    Description: S3 bucket name for frontend
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-S3BucketName'
+  
+  S3WebsiteUrl:
+    Description: S3 website URL (for testing)
+    Value: !GetAtt FrontendBucket.WebsiteURL
+    Export:
+      Name: !Sub '${AWS::StackName}-S3WebsiteUrl'

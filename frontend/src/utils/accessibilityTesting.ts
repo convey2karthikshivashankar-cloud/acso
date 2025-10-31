@@ -149,4 +149,4 @@ class AccessibilityTester {
       wcagLevel: 'AA',
       impact: issues.length > 0 ? 'serious' : 'minor',
     };
-  }
+  }};

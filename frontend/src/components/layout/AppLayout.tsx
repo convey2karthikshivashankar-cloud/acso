@@ -15,13 +15,17 @@ import {
   ChevronLeft as ChevronLeftIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
-  HighContrast as HighContrastIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useTheme as useCustomTheme } from '../theme/ThemeProvider';
 import { Navigation } from './Navigation';
 import { UserMenu } from './UserMenu';
 import { NotificationCenter } from './NotificationCenter';
+import { Breadcrumbs } from '../navigation/Breadcrumbs';
+import { GlobalSearch } from '../search/GlobalSearch';
+import { ConnectionStatus } from '../common/ConnectionStatus';
 import { useAppSelector } from '../../store/hooks';
+import { useCurrentRoute } from '../../routes/AppRouter';
 
 const DRAWER_WIDTH = 280;
 const DRAWER_WIDTH_COLLAPSED = 64;
@@ -32,13 +36,15 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const theme = useTheme();
-  const { themeMode, setThemeMode, toggleTheme } = useCustomTheme();
+  const { themeMode, setThemeMode } = useCustomTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const currentRoute = useCurrentRoute();
 
   const handleDrawerToggle = () => {
     if (isMobile) {
@@ -58,8 +64,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         return <DarkModeIcon />;
       case 'dark':
         return <LightModeIcon />;
-      case 'highContrast':
-        return <LightModeIcon />;
+
       default:
         return <DarkModeIcon />;
     }
@@ -71,15 +76,35 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         setThemeMode('dark');
         break;
       case 'dark':
-        setThemeMode('auto');
-        break;
-      case 'auto':
         setThemeMode('light');
         break;
       default:
         setThemeMode('light');
     }
   };
+
+  const toggleSearch = () => {
+    setShowSearch(!showSearch);
+  };
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+K or Cmd+K to open search
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        setShowSearch(true);
+      }
+      
+      // Escape to close search
+      if (event.key === 'Escape' && showSearch) {
+        setShowSearch(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showSearch]);
 
   const drawerWidth = isMobile 
     ? DRAWER_WIDTH 
@@ -168,10 +193,34 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <MenuIcon />
           </IconButton>
 
-          {/* Page title - will be updated by individual pages */}
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Dashboard
-          </Typography>
+          {/* Page title and search */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 2 }}>
+            <Typography variant="h6" noWrap component="div">
+              {currentRoute?.title || 'Dashboard'}
+            </Typography>
+            
+            {/* Global Search */}
+            {showSearch ? (
+              <Box sx={{ flexGrow: 1, maxWidth: 400 }}>
+                <GlobalSearch
+                  placeholder="Search across ACSO..."
+                  autoFocus={true}
+                />
+              </Box>
+            ) : (
+              <IconButton
+                color="inherit"
+                onClick={toggleSearch}
+                aria-label="open search"
+                title="Global Search (Ctrl+K)"
+              >
+                <SearchIcon />
+              </IconButton>
+            )}
+          </Box>
+
+          {/* Connection status */}
+          <ConnectionStatus variant="chip" showDetails={true} />
 
           {/* Theme toggle */}
           <IconButton
@@ -249,6 +298,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       >
         {/* Toolbar spacer */}
         <Toolbar />
+
+        {/* Breadcrumbs */}
+        <Box
+          sx={{
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.paper,
+            px: { xs: 2, sm: 3 },
+          }}
+        >
+          <Breadcrumbs />
+        </Box>
 
         {/* Page content */}
         <Container

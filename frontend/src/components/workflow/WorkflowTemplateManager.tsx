@@ -52,7 +52,7 @@ import {
   AccountTree,
   Security,
   Speed,
-  Integration,
+  IntegrationInstructions,
   Close,
   Search,
   FilterList,

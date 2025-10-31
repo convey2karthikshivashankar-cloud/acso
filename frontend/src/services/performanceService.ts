@@ -578,7 +578,7 @@ export const withPerformanceTracking = <P extends object>(
       }
     });
 
-    return <WrappedComponent {...props} ref={ref} />;
+    return React.createElement(WrappedComponent, { ...props, ref });
   });
 };
 

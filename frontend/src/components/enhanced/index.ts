@@ -66,28 +66,6 @@ export {
   ResponsiveBackgroundImage
 } from '../media/ResponsiveImage';
 
-export {
-  ResponsiveContainer,
-  ResponsiveSection,
-  ResponsiveStack,
-  ResponsiveHidden
-} from '../layout/ResponsiveContainer';
-export type { ResponsiveContainerProps } from '../layout/ResponsiveContainer';
-
-// Touch-Optimized Components
-export {
-  TouchOptimizedButton,
-  SwipeableCard,
-  TouchOptimizedFab,
-  PullToRefresh
-} from '../touch/TouchOptimized';
-export type {
-  TouchOptimizedButtonProps,
-  SwipeableCardProps,
-  TouchOptimizedFabProps,
-  PullToRefreshProps
-} from '../touch/TouchOptimized';
-
 // Common Components
 export { EnhancedNotification, NotificationProvider, useNotifications } from '../common/EnhancedNotification';
 export type { 
@@ -102,7 +80,7 @@ export type {
   EnhancedButtonProps 
 } from '../common/EnhancedButton';
 
-// Form Components (existing enhanced versions)
+// Form Components
 export {
   FormTextField,
   FormSelectField,
@@ -161,13 +139,11 @@ export type {
   WidgetState,
 } from '../dashboard';
 
-// Re-export existing components with enhanced features
+// Re-export existing components
 export { DataCard, DataCardGrid, MetricCard, StatusCard } from '../data/DataCard';
 export { Form } from '../forms/Form';
 export { DataTable } from '../data/DataTable';
-export { Loading } from '../common/Loading';
 export { LoadingSpinner } from '../common/LoadingSpinner';
-export { Notification } from '../common/Notification';
 export { StatusIndicator } from '../common/StatusIndicator';
 
 // Layout components
@@ -203,7 +179,7 @@ export {
 } from '../../utils/responsive';
 export type { ResponsiveValue } from '../../utils/responsive';
 
-// Legacy utility functions (maintained for backward compatibility)
+// Legacy utility functions
 export const createResponsiveBreakpoints = (
   xs?: number,
   sm?: number,
@@ -229,7 +205,7 @@ export const createGridColumns = (itemsPerRow: number) => {
   };
 };
 
-// Theme utilities for enhanced components
+// Theme utilities
 export const createGradient = (from: string, to: string, direction = '45deg') => 
   `linear-gradient(${direction}, ${from}, ${to})`;
 
@@ -265,87 +241,16 @@ export const fadeInAnimation = {
   animation: 'fadeIn 0.3s ease-out',
 };
 
-// Component composition utilities
-export const withLoading = <P extends object>(
-  Component: React.ComponentType<P>
-) => {
-  return (props: P & { loading?: boolean }) => {
-    const { loading, ...rest } = props;
-    
-    if (loading) {
-      return <Loading />;
-    }
-    
-    return <Component {...(rest as P)} />;
-  };
-};
-
-export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>
-) => {
-  return class extends React.Component<P, { hasError: boolean }> {
-    constructor(props: P) {
-      super(props);
-      this.state = { hasError: false };
-    }
-
-    static getDerivedStateFromError() {
-      return { hasError: true };
-    }
-
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-      console.error('Component error:', error, errorInfo);
-    }
-
-    render() {
-      if (this.state.hasError) {
-        return (
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <h3>Something went wrong</h3>
-            <p>Please try refreshing the page</p>
-          </div>
-        );
-      }
-
-      return <Component {...this.props} />;
-    }
-  };
-};// 
-Responsive Utilities
-export {
-  getResponsiveValue,
-  createResponsiveColumns,
-  createResponsiveSpacing,
-  createResponsiveFontSize,
-  createFlexLayout,
-  createMediaQuery,
-  createTouchTarget,
-  createSafeArea,
-  createResponsiveContainer,
-  createAspectRatio,
-  createResponsiveImage,
-  createScrollContainer,
-  createResponsiveAnimation,
-  createResponsiveVisibility,
-  createPerformanceOptimizations
-} from '../../utils/responsive';
-
-// Hooks
-export { useBreakpoints, useResponsiveValue, useResponsiveSpacing, useResponsiveFontSize } from '../../hooks/useBreakpoints';
-
 // Mobile-first responsive design utilities
 export const createMobileFirstStyles = (styles: {
   mobile?: object;
   tablet?: object;
   desktop?: object;
 }) => ({
-  // Mobile styles (default)
   ...styles.mobile,
-  // Tablet styles
   '@media (min-width: 768px)': {
     ...styles.tablet,
   },
-  // Desktop styles
   '@media (min-width: 1024px)': {
     ...styles.desktop,
   },
@@ -353,10 +258,10 @@ export const createMobileFirstStyles = (styles: {
 
 // Touch-optimized component utilities
 export const createTouchOptimizedStyles = (isMobile: boolean) => ({
-  minHeight: isMobile ? 44 : 32, // iOS minimum touch target
+  minHeight: isMobile ? 44 : 32,
   minWidth: isMobile ? 44 : 32,
   padding: isMobile ? '12px 16px' : '8px 12px',
-  fontSize: isMobile ? '16px' : '14px', // Prevents zoom on iOS
+  fontSize: isMobile ? '16px' : '14px',
   touchAction: 'manipulation',
   userSelect: 'none' as const,
   WebkitTapHighlightColor: 'transparent',
